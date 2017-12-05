@@ -14,14 +14,6 @@ from apiclient import discovery
 
 
 logger = logging.getLogger(__name__)
-user_uuid = '657a72b1-ff71-4696-810a-08ba07c38ec4'
-config = {
-    'auth': {
-        'host': 'localhost',
-        'username': 'sylvain',
-        'password': 'sylvain'
-    }
-}
 
 
 class Plugin(BaseSourcePlugin):
@@ -67,6 +59,8 @@ class Plugin(BaseSourcePlugin):
 
     def search(self, term, profile=None, args=None):
         logger.debug("search term=%s profile=%s", term, profile)
+        print args
+        user_uuid = args.get('xivo_user_uuid')
         token = self.get_external_token(user_uuid)
 
         gtoken = token.get('access_token')
