@@ -25,14 +25,14 @@ class GooglePostSchema(schemas.BaseSchema):
 class GoogleAuth(http.ErrorCatchingResource):
 
     auth_type = 'google'
-    scope = 'https://www.googleapis.com/auth/contacts.readonly'
+    scope = 'email'
 
     def __init__(self, external_auth_service, config):
         self.client_id = config['google']['client_id']
         self.client_secret = config['google']['client_secret']
         self.external_auth_service = external_auth_service
 
-        self.new_device_url = 'https://accounts.google.com/o/oauth2/device/code?scope={}&client_id={}&grant_type=device_request&access_type=offline'.format(self.scope, self.client_id)
+        self.new_device_url = 'https://accounts.google.com/o/oauth2/device/code'
 
     @http.required_acl('auth.users.{user_uuid}.external.google.delete')
     def delete(self, user_uuid):
@@ -57,15 +57,22 @@ class GoogleAuth(http.ErrorCatchingResource):
         logger.debug('creating new token')
         device_code = data['device_code']
 
-        url = 'https://accounts.google.com/o/oauth2/device/token?code={}&client_id={}&client_secret={}&grant_type=device_token'.format(device_code, self.client_id, self.client_secret)
-        r = requests.post(url)
+        data = {
+            'client_id': self.client_id,
+            'client_secret': self.client_secret,
+            'code': device_code,
+            'grant_type': 'http://oauth.net/grant_type/device/1.0'
+        }
+
+        url = 'https://www.googleapis.com/oauth2/v4/token'
+        r = requests.post(url, data=data)
 
         logger.debug('token info: %s', r.json())
         access_token = r.json()['access_token']
         refresh_token = r.json()['refresh_token']
         data['access_token'] = access_token
         data['refresh_token'] = refresh_token
-        data['token_expiration'] = self._get_timestamp_expiration(r.json()['expires_in_sec'])
+        data['token_expiration'] = self._get_timestamp_expiration(r.json()['expires_in'])
 
         self.external_auth_service.update(user_uuid, self.auth_type, data)
 
@@ -94,20 +101,30 @@ class GoogleAuth(http.ErrorCatchingResource):
         return self.external_auth_service.update(user_uuid, self.auth_type, data), 200
 
     def _new_device(self):
-        r = requests.post(self.new_device_url)
+        data = {
+            'client_id': self.client_id,
+            'scope': self.scope
+        }
+        r = requests.post(self.new_device_url, data=data)
         return r.json()
 
     def _refresh_token(self, user_uuid, data):
-        url = 'https://accounts.google.com/oauth/v4/token?refresh_token={}&client_id={}&client_secret={}&grant_type=refresh_token'.format(data['refresh_token'], self.client_id, self.client_secret)
-        r = requests.post(url)
+        refresh = {
+          'refresh_token': data['refresh_token'],
+          'client_id': self.client_id,
+          'client_secret': self.client_secret,
+          'grant_type': 'refresh_token'
+        }
+        url = 'https://www.googleapis.com/oauth2/v4/token'
+        r = requests.post(url, data=refresh)
         logger.debug('refresh token info: %s', r.json())
         data['access_token'] = r.json()['access_token']
-        data['expiration_token'] = self._get_timestamp_expiration(r.json()['expires_in_sec'])
+        data['expiration_token'] = self._get_timestamp_expiration(r.json()['expires_in'])
         self.external_auth_service.update(user_uuid, self.auth_type, data)
         return data['access_token']
 
-    def _get_timestamp_expiration(self, expires_in_sec):
-        expiration_token_date = datetime.now() + timedelta(seconds=expires_in_sec)
+    def _get_timestamp_expiration(self, expires_in):
+        expiration_token_date = datetime.now() + timedelta(seconds=expires_in)
         return time.mktime(expiration_token_date.timetuple())
 
     def _is_token_expired(self, expiration_token):
