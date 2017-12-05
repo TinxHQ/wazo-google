@@ -66,8 +66,6 @@ definitions:
   Post:
     type: object
     properties:
-      device_code:
-        type: string
       scope:
         type: array
         items:

@@ -18,14 +18,13 @@ logger = logging.getLogger(__name__)
 
 class GooglePostSchema(schemas.BaseSchema):
 
-    device_code = fields.String(validate=validate.Length(min=1, max=150), required=True)
     scope = fields.List(fields.String(min=1, max=512))
 
 
 class GoogleAuth(http.ErrorCatchingResource):
 
     auth_type = 'google'
-    scope = 'email'
+    scope = 'https://www.googleapis.com/auth/contacts'
 
     def __init__(self, external_auth_service, config):
         self.client_id = config['google']['client_id']
