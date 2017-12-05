@@ -23,7 +23,7 @@ setup(
     },
     entry_points={
         'wazo_auth.http': [
-            'zoho = wazo_google.auth.plugin:Plugin',
+            'google = wazo_google.auth.plugin:Plugin',
         ],
     }
 )
