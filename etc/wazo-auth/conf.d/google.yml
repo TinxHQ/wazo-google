@@ -1,0 +1,6 @@
+enabled_http_plugins:
+  google: true
+
+google:
+  client_id: '541216135825-en2mfkudiru3e6eibs82q3mbu1gco2rb.apps.googleusercontent.com'
+  client_secret: 'YgqqIVR6cyqeZY1rQ-hyBqBx'

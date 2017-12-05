@@ -1,0 +1,84 @@
+paths:
+  /users/{user_uuid}/external/google:
+    get:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Get a Google token
+      description: "**Required ACL**: `auth.users.{user_uuid}.external.google.read`"
+      tags:
+        - users
+        - google
+      parameters:
+        - $ref: '#/parameters/user_uuid'
+      responses:
+        '200':
+          description: The auth data
+        '400':
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/APIError'
+    post:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Create a Google token and store it
+      description: "**Required ACL**: `auth.users.{user_uuid}.external.google.create`"
+      tags:
+        - users
+        - google
+      parameters:
+        - $ref: '#/parameters/user_uuid'
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Post'
+      responses:
+        '200':
+          description: The auth data
+          schema:
+            $ref: '#/definitions/PostResult'
+        '400':
+          description: Invalid body
+          schema:
+            $ref: '#/definitions/APIError'
+    delete:
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      summary: Delete a Google token
+      description: "**Required ACL**: `auth.users.{user_uuid}.external.google.delete`"
+      tags:
+        - users
+        - google
+      parameters:
+        - $ref: '#/parameters/user_uuid'
+      responses:
+        '204':
+          description: The auth data
+          schema:
+            $ref: '#/definitions/PostResult'
+definitions:
+  Post:
+    type: object
+    properties:
+      device_code:
+        type: string
+      scope:
+        type: array
+        items:
+          type: string
+  PostResult:
+    type: object
+    properties:
+      verification_url:
+        type: string
+        description: The URL to confirm the authorization
+      user_code:
+        type: string
+        decription: The code to enter at the verification URL
+
