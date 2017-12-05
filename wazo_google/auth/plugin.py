@@ -41,21 +41,21 @@ class GoogleAuth(http.ErrorCatchingResource):
     @http.required_acl('auth.users.{user_uuid}.external.google.read')
     def get(self, user_uuid):
         data = self.external_auth_service.get(user_uuid, self.auth_type)
-        if 'access_token' in data:
-            # Check if the token is expired
-            if 'expiration_token' in data:
-                if (self._is_token_expired(data['expiration_token'])):
-                    logger.debug('refresh old token')
-                    data['access_token'] = self._refresh_token(user_uuid, data)
-                logger.debug('reusing old token')
-            else:
-                logger.debug('refresh old token')
-                data['access_token'] = self._refresh_token(user_uuid, data)
-            return {'access_token': data['access_token']}, 200
 
+        token = data.get('access_token')
+        expiration = data.get('token_expiration')
+
+        if not token:
+            return self._create_first_token(user_uuid, data)
+
+        if self._is_token_expired(expiration):
+            return self._refresh_token(user_uuid, data)
+
+        return self._new_get_response(data)
+
+    def _create_first_token(self, user_uuid, data):
         logger.debug('creating new token')
         device_code = data['device_code']
-
         data = {
             'client_id': self.client_id,
             'client_secret': self.client_secret,
@@ -67,15 +67,15 @@ class GoogleAuth(http.ErrorCatchingResource):
         r = requests.post(url, data=data)
 
         logger.debug('token info: %s', r.json())
-        access_token = r.json()['access_token']
-        refresh_token = r.json()['refresh_token']
-        data['access_token'] = access_token
-        data['refresh_token'] = refresh_token
-        data['token_expiration'] = self._get_timestamp_expiration(r.json()['expires_in'])
+        token_data = r.json()
+
+        data['access_token'] = token_data['access_token']
+        data['refresh_token'] = token_data['refresh_token']
+        data['token_expiration'] = self._get_timestamp_expiration(token_data['expires_in'])
 
         self.external_auth_service.update(user_uuid, self.auth_type, data)
 
-        return {'access_token': access_token}, 200
+        return self._new_get_response(data)
 
     @http.required_acl('auth.users.{user_uuid}.external.google.create')
     def post(self, user_uuid):
@@ -114,20 +114,34 @@ class GoogleAuth(http.ErrorCatchingResource):
           'client_secret': self.client_secret,
           'grant_type': 'refresh_token'
         }
+
         url = 'https://www.googleapis.com/oauth2/v4/token'
         r = requests.post(url, data=refresh)
+
         logger.debug('refresh token info: %s', r.json())
         data['access_token'] = r.json()['access_token']
-        data['expiration_token'] = self._get_timestamp_expiration(r.json()['expires_in'])
+        data['token_expiration'] = self._get_timestamp_expiration(r.json()['expires_in'])
+
         self.external_auth_service.update(user_uuid, self.auth_type, data)
-        return data['access_token']
+
+        return self._new_get_response(data)
 
     def _get_timestamp_expiration(self, expires_in):
-        expiration_token_date = datetime.now() + timedelta(seconds=expires_in)
-        return time.mktime(expiration_token_date.timetuple())
+        token_expiration_date = datetime.now() + timedelta(seconds=expires_in)
+        return time.mktime(token_expiration_date.timetuple())
 
-    def _is_token_expired(self, expiration_token):
-        return time.mktime(datetime.now().timetuple()) > expiration_token
+    def _is_token_expired(self, token_expiration):
+        if token_expiration is None:
+           return True
+        return time.mktime(datetime.now().timetuple()) > token_expiration
+
+    @staticmethod
+    def _new_get_response(data):
+        return {
+            'access_token': data['access_token'],
+            'expiration': data['token_expiration'],
+            'scope': data.get('scope'),
+        }, 200
 
 
 class Plugin(object):
