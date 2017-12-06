@@ -7,6 +7,7 @@ from xivo_dird import BaseSourcePlugin
 from xivo_dird import make_result_class
 import logging
 import httplib2
+import re
 
 from oauth2client.client import AccessTokenCredentials
 from xivo_auth_client import Client as Auth
@@ -61,6 +62,7 @@ class Plugin(BaseSourcePlugin):
         logger.debug("search term=%s profile=%s", term, profile)
         user_uuid = profile.get('xivo_user_uuid')
         token = self.get_external_token(user_uuid)
+        res = []
 
         gtoken = token.get('access_token')
         credentials = AccessTokenCredentials(gtoken, 'wazo_ua/1.0')
@@ -72,26 +74,31 @@ class Plugin(BaseSourcePlugin):
 
         results = service.people().connections().list(
             resourceName='people/me',
-            pageSize=10,
-            personFields='names,emailAddresses').execute()
+            pageSize=500,
+            personFields='names,emailAddresses,phoneNumbers').execute()
         connections = results.get('connections', [])
 
-        res = []
         for person in connections:
             names = person.get('names', [])
+            phoneNumbers = person.get('phoneNumbers', [])
             if len(names) > 0:
-                name = names[0].get('displayName')
-                res.append({
-                    'firstname': '',
-                    'lastname': name,
-                    'job': '',
-                    'phone': '',
-                    'email': '',
-                    'entity': '',
-                    'mobile': '',
-                    'fax': '',
+                if re.search(term, names[0].get('displayName'), re.IGNORECASE):
+                    phone = ''
+                    if len(phoneNumbers) > 0:
+                        phone = phoneNumbers[0].get('canonicalForm')
+                    res.append({
+                        'id': '',
+                        'firstname': names[0].get('familyName'),
+                        'lastname': names[0].get('givenName'),
+                        'job': '',
+                        'phone': phone,
+                        'email': '',
+                        'entity': '',
+                        'mobile': '',
+                        'fax': '',
                     })
 
+        logger.debug(res)
         return [self._source_result_from_content(content) for content in res]
 
     def first_match(self, term, args=None):
