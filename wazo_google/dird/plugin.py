@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class Plugin(BaseSourcePlugin):
 
     def load(self, config):
-        self.config = config['config']['google']
+        self.config = config['config']['google_config']
         self.name = config['config']['name']
         self.token = self.get_token()
 
@@ -59,8 +59,7 @@ class Plugin(BaseSourcePlugin):
 
     def search(self, term, profile=None, args=None):
         logger.debug("search term=%s profile=%s", term, profile)
-        print args
-        user_uuid = args.get('xivo_user_uuid')
+        user_uuid = profile.get('xivo_user_uuid')
         token = self.get_external_token(user_uuid)
 
         gtoken = token.get('access_token')
@@ -69,7 +68,7 @@ class Plugin(BaseSourcePlugin):
         http = credentials.authorize(http)
 
         service = discovery.build('people', 'v1', http=http,
-            discoveryServiceUrl='https://people.googleapis.com/$discovery/rest')
+            discoveryServiceUrl='https://people.googleapis.com/$discovery/rest', cache_discovery=False)
 
         results = service.people().connections().list(
             resourceName='people/me',
@@ -82,7 +81,16 @@ class Plugin(BaseSourcePlugin):
             names = person.get('names', [])
             if len(names) > 0:
                 name = names[0].get('displayName')
-                res.push(name)
+                res.append({
+                    'firstname': '',
+                    'lastname': name,
+                    'job': '',
+                    'phone': '',
+                    'email': '',
+                    'entity': '',
+                    'mobile': '',
+                    'fax': '',
+                    })
 
         return [self._source_result_from_content(content) for content in res]
 

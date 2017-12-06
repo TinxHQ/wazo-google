@@ -12,7 +12,7 @@ sources:
   google:
     type: google
     name: google
-    config:
+    google_config:
       auth:
         host: localhost
         username:
