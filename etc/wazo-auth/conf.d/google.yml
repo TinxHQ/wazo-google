@@ -1,4 +1,4 @@
-enabled_http_plugins:
+enabled_external_auth_plugins:
   google: true
 
 google:
