@@ -76,7 +76,3 @@ definitions:
       verification_url:
         type: string
         description: The URL to confirm the authorization
-      user_code:
-        type: string
-        decription: The code to enter at the verification URL
-
