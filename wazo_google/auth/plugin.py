@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 import logging
-import requests
 import time
 import websocket
+import json
 
 from threading import Thread
 from flask import request
@@ -33,7 +33,7 @@ class GoogleAuth(http.AuthResource):
     token_url = 'https://www.googleapis.com/oauth2/v4/token'
     refresh_url = token_url
     redirect_uri = 'https://oauth2.wazo.community'
-    scope = 'https://www.googleapis.com/auth/contacts'
+    scope = ['https://www.googleapis.com/auth/contacts']
 
     def __init__(self, external_auth_service, config):
         self.client_id = config['google']['client_id']
