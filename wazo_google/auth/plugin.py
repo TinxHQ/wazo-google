@@ -33,13 +33,16 @@ class GoogleAuth(http.AuthResource):
     token_url = 'https://www.googleapis.com/oauth2/v4/token'
     refresh_url = token_url
     redirect_uri = 'https://oauth2.wazo.community'
-    scope = ['https://www.googleapis.com/auth/contacts']
+    scope = [
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/contacts'
+    ]
 
     def __init__(self, external_auth_service, config):
         self.client_id = config['google']['client_id']
         self.client_secret = config['google']['client_secret']
         self.external_auth_service = external_auth_service
-        self.oauth2 = OAuth2Session(self.client_id, scope=self.scope, redirect_uri=self.redirect_uri)
+        self.oauth2 = OAuth2Session(self.client_id, scope=self.scope, redirect_uri=self.redirect_uri, access_type="offline", prompt="select_account")
         self.websocket = WebSocketOAuth2(self.oauth2, self.external_auth_service, self.client_secret, self.token_url, self.auth_type)
 
     @http.required_acl('auth.users.{user_uuid}.external.google.delete')
