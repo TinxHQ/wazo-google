@@ -156,8 +156,7 @@ class WebSocketOAuth2(Thread):
         data = {
             'access_token': token_data['access_token'],
             'refresh_token': token_data['refresh_token'],
-            'token_expiration': get_timestamp_expiration(token_data['expires_in']),
-            'scope': token_data['scope']
+            'token_expiration': get_timestamp_expiration(token_data['expires_in'])
         }
         self.external_auth_service.update(user_uuid, self.auth_type, data)
 
