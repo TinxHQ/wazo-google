@@ -42,7 +42,7 @@ class GoogleAuth(http.AuthResource):
         self.client_id = config['google']['client_id']
         self.client_secret = config['google']['client_secret']
         self.external_auth_service = external_auth_service
-        self.oauth2 = OAuth2Session(self.client_id, scope=self.scope, redirect_uri=self.redirect_uri, access_type="offline", prompt="select_account")
+        self.oauth2 = OAuth2Session(self.client_id, scope=self.scope, redirect_uri=self.redirect_uri)
         self.websocket = WebSocketOAuth2(self.oauth2, self.external_auth_service, self.client_secret, self.token_url, self.auth_type)
 
     @http.required_acl('auth.users.{user_uuid}.external.google.delete')
@@ -76,7 +76,7 @@ class GoogleAuth(http.AuthResource):
             'scope': args.get('scope', self.scope)
         }
         self.external_auth_service.create(user_uuid, self.auth_type, data)
-        authorization_url, state = self.oauth2.authorization_url(self.authorization_base_url)
+        authorization_url, state = self.oauth2.authorization_url(self.authorization_base_url, access_type="offline", prompt="select_account")
 
         websocket_thread = Thread(target=self.websocket.run, args=(state, user_uuid), name='websocket_thread')
         websocket_thread.start()
