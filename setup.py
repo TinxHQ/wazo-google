@@ -22,9 +22,6 @@ setup(
         'wazo_google': ['*/api.yml'],
     },
     entry_points={
-        'wazo_auth.http': [
-            'google = wazo_google.auth.plugin:Plugin',
-        ],
         'wazo_auth.external_auth': [
             'google = wazo_google.auth.plugin:Plugin',
         ],
