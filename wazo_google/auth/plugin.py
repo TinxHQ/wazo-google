@@ -76,7 +76,7 @@ class GoogleAuth(http.AuthResource):
             'scope': args.get('scope', self.scope)
         }
         self.external_auth_service.create(user_uuid, self.auth_type, data)
-        authorization_url, state = self.oauth2.authorization_url(self.authorization_base_url, access_type='offline', prompt='select_account', include_granted_scopes='true')
+        authorization_url, state = self.oauth2.authorization_url(self.authorization_base_url, access_type='offline', prompt='consent', include_granted_scopes='true')
 
         websocket_thread = Thread(target=self.websocket.run, args=(state, user_uuid), name='websocket_thread')
         websocket_thread.start()

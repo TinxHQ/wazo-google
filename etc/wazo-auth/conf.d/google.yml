@@ -2,5 +2,5 @@ enabled_external_auth_plugins:
   google: true
 
 google:
-  client_id: '541216135825-9apifan7v4blkiu64trmvtcf1cepftll.apps.googleusercontent.com'
-  client_secret: 'iTZ42Eytpqwj7ZiPO0g2bvSL'
+  client_id: '210967849940-6do69sj1v5n0nsnukp0031ofi3o0l57v.apps.googleusercontent.com'
+  client_secret: '78z8C50baEyrw9mk7C_pTT9n'
