@@ -32,7 +32,7 @@ class GoogleAuth(http.AuthResource):
     authorization_base_url = 'https://accounts.google.com/o/oauth2/v2/auth'
     token_url = 'https://www.googleapis.com/oauth2/v4/token'
     refresh_url = token_url
-    redirect_uri = 'https://oauth2.wazo.community'
+    redirect_uri = 'https://oauth.wazo.io/google/authorize'
     scope = [
       'https://www.googleapis.com/auth/userinfo.profile',
       'https://www.googleapis.com/auth/contacts'
