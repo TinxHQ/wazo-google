@@ -119,7 +119,7 @@ class WebSocketOAuth2(Thread):
     def __init__(self, auth, external_auth, client_secret, token_url, auth_type):
         Thread.__init__(self)
 
-        self.host = 'wss://oauth2.wazo.community'
+        self.host = 'wss://oauth.wazo.io'
         self.oauth2 = auth
         self.external_auth_service = external_auth
         self.client_secret = client_secret
