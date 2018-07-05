@@ -3,8 +3,8 @@
 # SPDX-License-Identifier: GPL-3.0+
 
 
-from xivo_dird import BaseSourcePlugin
-from xivo_dird import make_result_class
+from wazo_dird import BaseSourcePlugin
+from wazo_dird import make_result_class
 import logging
 import httplib2
 import re

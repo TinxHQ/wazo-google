@@ -14,10 +14,12 @@ case "$1" in
 
     install)
 	systemctl restart wazo-auth
+	systemctl restart wazo-dird
     ;;
 
     uninstall)
 	systemctl restart wazo-auth
+	systemctl restart wazo-dird
     ;;
 
     postrm)

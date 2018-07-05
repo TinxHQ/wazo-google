@@ -1,6 +1,6 @@
 name: wazo-google
 namespace: official
-version: 0.0.1
+version: 0.0.2
 author: Wazo Team
 display_name: Google Authentication
 plugin_format_version: 1

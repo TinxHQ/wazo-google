@@ -25,7 +25,7 @@ setup(
         'wazo_auth.external_auth': [
             'google = wazo_google.auth.plugin:Plugin',
         ],
-        'xivo_dird.backends': [
+        'wazo_dird.backends': [
             'google = wazo_google.dird.plugin:Plugin',
         ],
     }
