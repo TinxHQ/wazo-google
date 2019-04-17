@@ -1,24 +1,5 @@
 enabled_plugins:
   backends:
-    google : true
-
-services:
-  lookup:
-    default:
-      sources:
-        google: true
-
-sources:
-  google:
-    type: google
-    name: google
-    google_config:
-      auth:
-        host: localhost
-        username:
-        password:
-    format_columns:
-      name: '{firstname} {lastname}'
-      display_name: '{firstname} {lastname}'
-      phone_mobile: '{mobile}'
-      reverse: '{firstname} {lastname}'
+    google: true
+  views:
+    google_view: true

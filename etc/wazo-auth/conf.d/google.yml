@@ -2,5 +2,11 @@ enabled_external_auth_plugins:
   google: true
 
 google:
-  client_id: '210967849940-6do69sj1v5n0nsnukp0031ofi3o0l57v.apps.googleusercontent.com'
-  client_secret: '78z8C50baEyrw9mk7C_pTT9n'
+  authorization_base_url: 'https://accounts.google.com/o/oauth2/v2/auth'
+  redirect_uri: 'https://oauth.wazo.io/google/authorize'
+  scope: [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/contacts'
+    ]
+  token_url: 'https://www.googleapis.com/oauth2/v4/token'
+  websocket_host: 'wss://oauth.wazo.io'
