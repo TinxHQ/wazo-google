@@ -1,0 +1,74 @@
+version: '3.7'
+
+services:
+
+  auth:
+    image: wazo-auth-google-test
+    environment:
+      OAUTHLIB_INSECURE_TRANSPORT: 1
+      XIVO_UUID: the-predefined-xivo-uuid
+    ports:
+      - "9497"
+    volumes:
+      - "../..:/usr/src/wazo-google"
+      - "./etc/wazo-auth/conf.d/default.yml:/etc/wazo-auth/conf.d/default.yml"
+      - "./etc/wazo-auth/conf.d/google.yml:/etc/wazo-auth/conf.d/google.yml"
+    command: "wazo-auth"
+
+  auth-mock:
+    image: "wazopbx/wazo-auth-mock"
+    ports:
+      - "9497"
+    volumes:
+      - "./ssl:/usr/local/share/ssl"
+
+  dird:
+    image: wazo-dird-google-test
+    environment:
+      XIVO_UUID: the-predefined-xivo-uuid
+    ports:
+    - "9489"
+    volumes:
+    - "./etc/wazo-dird/conf.d/google.yml:/etc/wazo-dird/conf.d/google.yml"
+    - "./etc/wazo-dird/conf.d/default.yml:/etc/wazo-dird/conf.d/default.yml"
+    # - "${LOCAL_GIT_REPOS}/wazo-dird/wazo_dird:/usr/local/lib/python3.5/site-packages/wazo_dird"
+
+  google-mock:
+    environment:
+      FLASK_ENV: development
+    image: google-mock
+    ports:
+      - "80"
+
+  oauth2sync:
+    image: oauth2-synchronization-service
+    ports:
+      - "80"
+
+  postgres-auth:
+    image: wazopbx/wazo-auth-db
+    ports:
+      - "5432"
+
+  postgres-dird:
+    image: wazopbx/wazo-dird-db
+    ports:
+      - "5432"
+
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - "5672"
+    volumes:
+      - type: tmpfs
+        target: /var/lib/rabbitmq
+
+  swagger-validator:
+    image: swaggerapi/swagger-validator
+    ports:
+      - "8080"
+
+  sync:
+    image: wazopbx/wait
+    environment:
+      TIMEOUT: "${INTEGRATION_TEST_TIMEOUT}"

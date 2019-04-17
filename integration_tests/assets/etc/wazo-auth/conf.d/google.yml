@@ -1,0 +1,12 @@
+enabled_external_auth_plugins:
+  google: true
+
+google:
+  authorization_base_url: 'https://accounts.google.com/o/oauth2/v2/auth'
+  redirect_uri: 'http://oauth2sync:80/google/authorize'
+  scope: [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/contacts'
+    ]
+  token_url: 'http://oauth2sync:80/google/token'
+  websocket_host: 'ws://oauth2sync:80'

@@ -1,0 +1,11 @@
+version: '3.7'
+services:
+  sync:
+    depends_on:
+      - auth
+      - dird
+      - postgres-auth
+      - postgres-dird
+      - swagger-validator
+    environment:
+      TARGETS: "auth:9497 dird:9489 postgres-auth:5432 postgres-dird:5432 swagger-validator:8080"

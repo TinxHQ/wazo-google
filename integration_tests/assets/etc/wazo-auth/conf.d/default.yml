@@ -1,0 +1,8 @@
+amqp:
+  uri: amqp://guest:guest@rabbitmq:5672/
+confd_db_uri: postgresql://asterisk:proformatique@postgres-auth:5432
+db_uri: postgresql://asterisk:proformatique@postgres-auth:5432
+debug: True
+foreground: True
+service_discovery:
+  enabled: false
