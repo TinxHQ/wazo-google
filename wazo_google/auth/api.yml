@@ -23,8 +23,9 @@ paths:
             $ref: '#/definitions/APIError'
     post:
       summary: Ask for a verification URL and store code to get token
-      description:
-        "**Required ACL**: `auth.users.{user_uuid}.external.google.create`.\n\n
+      description: |
+        **Required ACL**: `auth.users.{user_uuid}.external.google.create`.
+
         More info on Google permissions: https://developers.google.com/identity/protocols/googlescopes"
       tags:
         - users
@@ -54,7 +55,7 @@ paths:
         - $ref: '#/parameters/user_uuid'
       responses:
         '204':
-          description: No content
+          description: External authentication deleted
         '401':
           description: Unauthorized
           schema:
@@ -63,7 +64,6 @@ paths:
           description: Not found
           schema:
             $ref: '#/definitions/APIError'
-
 definitions:
   GoogleGetResult:
     type: object
