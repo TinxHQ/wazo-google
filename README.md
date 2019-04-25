@@ -1,8 +1,14 @@
 # wazo-google plugin
 
-### auth plugin
+## auth plugin
 
 This plugin adds routes to manage google authentication.
+
+### Configuration
+
+The `client_id` and `client_secret` for the google external auth can be configured using the
+`/external/google/config` URL from wazo-auth.
+
 
 ## Wazo-SDK
 
