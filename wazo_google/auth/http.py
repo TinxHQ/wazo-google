@@ -52,7 +52,11 @@ class GoogleAuth(http.AuthResource):
 
         logger.debug('User(%s) is creating an authorize url for Google', str(user_uuid))
 
-        authorization_url, state = self.oauth2.authorization_url(self.authorization_base_url)
+        authorization_url, state = self.oauth2.authorization_url(
+            self.authorization_base_url,
+            access_type='offline',
+            prompt='consent',
+        )
         logger.debug('Authorization url : {}'.format(authorization_url))
 
         self.websocket = WebSocketOAuth2(
@@ -63,7 +67,11 @@ class GoogleAuth(http.AuthResource):
             token_url=self.token_url,
             auth_type=self.auth_type
         )
-        websocket_thread = Thread(target=self.websocket.run, args=(state, user_uuid), name='websocket_thread')
+        websocket_thread = Thread(
+            target=self.websocket.run,
+            args=(state, user_uuid),
+            name='websocket_thread',
+        )
         websocket_thread.daemon = True
         websocket_thread.start()
 
