@@ -41,10 +41,13 @@ class WebSocketOAuth2(Thread):
             ws.close()
 
     def _on_message(self, ws, message):
-        logger.debug("Confirmation has been received on websocketOAuth, message : {}.".format(message))
-        msg = json.loads(message)
-        ws.close()
-        self.create_first_token(self.user_uuid, msg.get('code'))
+        try:
+            logger.debug("Confirmation has been received on websocketOAuth, message : %s", message)
+            msg = json.loads(message)
+            ws.close()
+            self.create_first_token(self.user_uuid, msg.get('code'))
+        except Exception as e:
+            logger.error('error when receiving websocket event %s', e)
 
     def _on_error(self, ws, error):
         logger.error(error)
