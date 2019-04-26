@@ -1,8 +1,12 @@
 # wazo-google plugin
 
+This is a plugin for Wazo that adds external authentication routes to wazo-auth for Google.
+
+
 ## auth plugin
 
 This plugin adds routes to manage google authentication.
+
 
 ### Configuration
 
