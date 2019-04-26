@@ -57,7 +57,11 @@ class WebSocketOAuth2(Thread):
 
     def create_first_token(self, user_uuid, code):
         logger.debug('Trying to fetch token on %s', self.token_url)
-        token_data = self.oauth2.fetch_token(self.token_url, client_secret=self.client_secret, code=code)
+        token_data = self.oauth2.fetch_token(
+            self.token_url,
+            client_secret=self.client_secret,
+            code=code,
+        )
         data = {
             'access_token': token_data['access_token'],
             'refresh_token': token_data['refresh_token'],

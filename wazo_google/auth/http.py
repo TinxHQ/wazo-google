@@ -19,7 +19,8 @@ from .websocket_oauth2 import WebSocketOAuth2
 
 logger = logging.getLogger(__name__)
 
-# Allow token scope to not match requested scope. (Requests-OAuthlib raises exception on scope mismatch by default.)
+# Allow token scope to not match requested scope.
+# (Requests-OAuthlib raises exception on scope mismatch by default.)
 os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 os.environ['OAUTHLIB_IGNORE_SCOPE_CHANGE'] = '1'
 
@@ -103,7 +104,11 @@ class GoogleAuth(http.AuthResource):
     def _refresh_token(self, user_uuid, data):
         client_id, client_secret = self._get_external_config()
         oauth2 = OAuth2Session(client_id, token=data)
-        token_data = oauth2.refresh_token(self.token_url, client_id=client_id, client_secret=client_secret)
+        token_data = oauth2.refresh_token(
+            self.token_url,
+            client_id=client_id,
+            client_secret=client_secret,
+        )
 
         data['refresh_token'] = token_data['refresh_token']
         data['access_token'] = token_data['access_token']
