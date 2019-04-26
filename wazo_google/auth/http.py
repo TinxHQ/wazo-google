@@ -67,6 +67,8 @@ class GoogleAuth(http.AuthResource):
             token_url=self.token_url,
             auth_type=self.auth_type
         )
+
+        # TODO find something better than a thread per request
         websocket_thread = Thread(
             target=self.websocket.run,
             args=(state, user_uuid),
