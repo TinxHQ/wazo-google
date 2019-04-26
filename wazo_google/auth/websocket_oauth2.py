@@ -34,7 +34,7 @@ class WebSocketOAuth2(Thread):
             on_message=self._on_message,
             on_error=self._on_error,
             on_close=self._on_close)
-        logger.debug('WebSocketOAuth2 opened.')
+        logger.debug('WebSocketOAuth2 opened')
         try:
             ws.run_forever()
         finally:
@@ -53,10 +53,10 @@ class WebSocketOAuth2(Thread):
         logger.error(error)
 
     def _on_close(self, ws):
-        logger.debug("WebsocketOAuth closed.")
+        logger.debug("WebsocketOAuth closed")
 
     def create_first_token(self, user_uuid, code):
-        logger.debug('Trying to fetch token on {}'.format(self.token_url))
+        logger.debug('Trying to fetch token on %s', self.token_url)
         token_data = self.oauth2.fetch_token(self.token_url, client_secret=self.client_secret, code=code)
         data = {
             'access_token': token_data['access_token'],
@@ -64,7 +64,7 @@ class WebSocketOAuth2(Thread):
             'token_expiration': get_timestamp_expiration(token_data['expires_in']),
             'scope': token_data['scope']
         }
-        logger.debug('Google token created.')
+        logger.debug('Google token created')
         try:
             self.external_auth_service.create(user_uuid, self.auth_type, data)
         except ExternalAuthAlreadyExists:

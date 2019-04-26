@@ -26,7 +26,7 @@ class GoogleService:
         try:
             response = requests.get(url, headers=headers, params=query_params)
             if response.status_code == 200:
-                logger.debug('Sucessfully fetched contacts from google.')
+                logger.debug('Sucessfully fetched contacts from google')
                 return response.json().get('value', [])
             else:
                 return []
@@ -39,7 +39,7 @@ class GoogleService:
         try:
             response = requests.get(url, headers=headers)
             if response.status_code == 200:
-                logger.debug('Successfully fetched contacts from google.')
+                logger.debug('Successfully fetched contacts from google')
                 return response.json().get('value', [])
             else:
                 logger.error('An error occured while fetching information from google endpoint')
@@ -62,14 +62,13 @@ def get_google_access_token(user_uuid, wazo_token, **auth_config):
         auth = Auth(token=wazo_token, **auth_config)
         return auth.external.get('google', user_uuid).get('access_token')
     except requests.HTTPError as e:
-        logger.error('Google token could not be fetched from wazo-auth, error %s', e)
+        logger.error('Google token could not be fetched from wazo-auth, error: %s', e)
         raise GoogleTokenNotFoundException(user_uuid)
     except requests.exceptions.ConnectionError as e:
-        logger.error('Unable to connect auth-client for the given parameters: %s, error :%s.', auth_config, e)
+        logger.error(
+            'Unable to connect auth-client for the given parameters: %s, error: %s.',
+            auth_config, e,
+        )
         raise GoogleTokenNotFoundException(user_uuid)
     except requests.exceptions.RequestException as e:
-        logger.error('Error occured while connecting to wazo-auth, error :%s', e)
-
-
-def get_first_email(contact_information):
-    return next(iter(contact_information.get('emailAddresses') or []), {}).get('address')
+        logger.error('Error occured while connecting to wazo-auth, error: %s', e)

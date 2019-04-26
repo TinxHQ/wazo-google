@@ -57,7 +57,7 @@ class GoogleAuth(http.AuthResource):
             access_type='offline',
             prompt='consent',
         )
-        logger.debug('Authorization url : {}'.format(authorization_url))
+        logger.debug('Authorization url : %s', authorization_url)
 
         self.websocket = WebSocketOAuth2(
             host=self.websocket_host,
