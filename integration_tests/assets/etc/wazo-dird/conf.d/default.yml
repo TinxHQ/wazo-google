@@ -1,0 +1,15 @@
+auth:
+  host: auth-mock
+  port: 9497
+  verify_certificate: false
+  username: wazo-dird
+  password: secret
+
+db_uri: postgresql://asterisk:proformatique@postgres-dird/asterisk
+
+debug: true
+
+service_discovery:
+  enabled: false
+
+

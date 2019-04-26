@@ -1,0 +1,12 @@
+FROM wazopbx/wazo-auth
+
+ADD . /usr/src/wazo-google
+
+ENV PYTHONDONTWRITEBYTECODE='true'
+
+RUN true \
+    && cd /usr/src/wazo-google \
+    && pip install -r requirements.txt \
+    && python setup.py develop \
+    && wazo-auth-bootstrap setup \
+    && true

@@ -1,108 +1,137 @@
-# -*- coding: utf-8 -*-
-# Copyright 2017 The Wazo Authors  (see the AUTHORS file)
-# SPDX-License-Identifier: GPL-3.0+
+# Copyright 2019 The Wazo Authors  (see the AUTHORS file)
+# SPDX-License-Identifier: GPL-3.0-or-later
 
-
-from wazo_dird import BaseSourcePlugin
-from wazo_dird import make_result_class
 import logging
-import httplib2
-import re
+from operator import itemgetter
 
-from oauth2client.client import AccessTokenCredentials
-from xivo_auth_client import Client as Auth
-from apiclient import discovery
+from wazo_dird import BaseSourcePlugin, make_result_class
 
+from .exceptions import GoogleTokenNotFoundException
+from . import services
 
 logger = logging.getLogger(__name__)
 
 
-class Plugin(BaseSourcePlugin):
+class GooglePlugin(BaseSourcePlugin):
 
-    def load(self, config):
-        self.config = config['config']['google_config']
-        self.name = config['config']['name']
-        self.token = self.get_token()
+    def load(self, dependencies):
+        config = dependencies['config']
+        self.auth = config['auth']
+        self.name = config['name']
+        self.endpoint = config['endpoint']
+        self.google = services.GoogleService()
 
-        unique_column = None
-        format_columns = config['config'].get(self.FORMAT_COLUMNS, {})
+        self.unique_column = 'id'
+        format_columns = dependencies['config'].get(self.FORMAT_COLUMNS, {})
+        if 'reverse' not in format_columns:
+            logger.info(
+                'no "reverse" column has been configured on %s will use "givenName"',
+                self.name
+            )
+            format_columns['reverse'] = '{givenName}'
 
         self._SourceResult = make_result_class(
+            'google',
             self.name,
-            unique_column,
+            self.unique_column,
             format_columns,
+        )
+
+        self._searched_columns = config.get(self.SEARCHED_COLUMNS, [])
+        if not self._searched_columns:
+            logger.info(
+                'no "searched_columns" configured on "%s" no results will be matched',
+                self.name,
             )
 
+        self._first_matched_columns = config.get(self.FIRST_MATCHED_COLUMNS, [])
+        if not self._first_matched_columns:
+            logger.info(
+                'no "first_matched_columns" configured on "%s" no results will be matched',
+                self.name,
+            )
 
-    def get_token(self):
-        auth = Auth(
-            self.config['auth']['host'],
-            username=self.config['auth']['username'],
-            password=self.config['auth']['password'],
-            verify_certificate=False)
-        return auth.token.new('xivo_service', expiration=3600)
-
-    def get_external_token(self, user_uuid):
-        token = None
-        auth = Auth(self.config['auth']['host'], verify_certificate=False, token=self.token['token'])
+    def search(self, term, args=None):
+        logger.debug('Searching term=%s', term)
         try:
-            token = auth.external.get('google', user_uuid)
-        except:
-            print('Request new token')
-            self.token = self.get_token()
-            auth = Auth(self.config['auth']['host'], verify_certificate=False, token=self.token['token'])
-            token = auth.external.get('google', user_uuid)
+            google_token = self._get_google_token(**args)
+        except GoogleTokenNotFoundException:
+            return []
 
-        return token
+        contacts = self.google.get_contacts_with_term(google_token, term, self.endpoint)
+        updated_contacts = self._update_contact_fields(contacts)
 
-    def name(self):
-        return self.name
+        lowered_term = term.lower()
 
-    def search(self, term, profile=None, args=None):
-        logger.debug("search term=%s profile=%s", term, profile)
-        user_uuid = profile.get('xivo_user_uuid')
-        token = self.get_external_token(user_uuid)
-        res = []
+        def match_fn(contact):
+            for column in self._searched_columns:
+                column_value = contact.get(column) or ''
+                if lowered_term in str(column_value).lower():
+                    return True
+            return False
 
-        gtoken = token.get('access_token')
-        credentials = AccessTokenCredentials(gtoken, 'wazo_ua/1.0')
-        http = httplib2.Http()
-        http = credentials.authorize(http)
+        filtered_contacts = [c for c in updated_contacts if match_fn(c)]
+        sorted_contacts = sorted(filtered_contacts, key=itemgetter('givenName'))
 
-        service = discovery.build('people', 'v1', http=http,
-            discoveryServiceUrl='https://people.googleapis.com/$discovery/rest', cache_discovery=False)
+        return [self._SourceResult(c) for c in sorted_contacts]
 
-        results = service.people().connections().list(
-            resourceName='people/me',
-            pageSize=500,
-            personFields='names,emailAddresses,phoneNumbers').execute()
-        connections = results.get('connections', [])
+    def list(self, unique_ids, args=None):
+        try:
+            google_token = self._get_google_token(**args)
+        except GoogleTokenNotFoundException:
+            return []
 
-        for person in connections:
-            names = person.get('names', [])
-            phoneNumbers = person.get('phoneNumbers', [])
-            if len(names) > 0:
-                if re.search(term, names[0].get('displayName'), re.IGNORECASE):
-                    phone = ''
-                    if len(phoneNumbers) > 0:
-                        phone = phoneNumbers[0].get('canonicalForm')
-                    res.append({
-                        'id': '',
-                        'firstname': names[0].get('familyName'),
-                        'lastname': names[0].get('givenName'),
-                        'job': '',
-                        'phone': phone,
-                        'email': '',
-                        'entity': '',
-                        'mobile': '',
-                        'fax': '',
-                    })
+        contacts = self.google.get_contacts(google_token, self.endpoint)
+        updated_contacts = self._update_contact_fields(contacts)
+        filtered_contacts = [c for c in updated_contacts if c[self.unique_column] in unique_ids]
 
-        logger.debug(res)
-        return [self._source_result_from_content(content) for content in res]
+        return [self._SourceResult(contact) for contact in filtered_contacts]
 
     def first_match(self, term, args=None):
-        return None
+        if not self._first_matched_columns:
+            logger.debug(
+                '%s is a source for reverse lookups but the not have a "first_matched_columns"',
+                self.name,
+            )
+            return
 
-    def _source_result_from_content(self, content):
-        return self._SourceResult(content)
+        try:
+            google_token = self._get_google_token(**args)
+        except GoogleTokenNotFoundException:
+            logger.debug('could not find a matching google token, aborting first_match')
+            return None
+
+        contacts = self.google.get_contacts(google_token, self.endpoint)
+        updated_contacts = self._update_contact_fields(contacts)
+        lowered_term = term.lower()
+
+        for contact in updated_contacts:
+            if self._first_match_predicate(lowered_term, contact):
+                return self._SourceResult(contact)
+
+    def _first_match_predicate(self, term, contact):
+        for column in self._first_matched_columns:
+            column_value = contact.get(column) or ''
+
+            if not isinstance(column_value, list):
+                if term == str(column_value).lower():
+                    return True
+            else:
+                for item in column_value:
+                    if term == item.lower():
+                        return True
+        return False
+
+    def _get_google_token(self, xivo_user_uuid, token=None, **ignored):
+        if not token:
+            logger.debug('Unable to search through Google without a token.')
+            raise GoogleTokenNotFoundException()
+
+        return services.get_google_access_token(xivo_user_uuid, token, **self.auth)
+
+    @staticmethod
+    def _update_contact_fields(contacts):
+        for contact in contacts:
+            contact.setdefault('givenName', '')
+            contact['email'] = services.get_first_email(contact)
+        return contacts

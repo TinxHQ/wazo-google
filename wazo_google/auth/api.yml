@@ -1,10 +1,6 @@
 paths:
   /users/{user_uuid}/external/google:
     get:
-      consumes:
-        - application/json
-      produces:
-        - application/json
       summary: Get a Google token
       description: "**Required ACL**: `auth.users.{user_uuid}.external.google.read`"
       tags:
@@ -15,17 +11,22 @@ paths:
       responses:
         '200':
           description: The auth data
-        '400':
-          description: Invalid body
+          schema:
+            $ref: '#/definitions/GoogleGetResult'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/APIError'
+        '404':
+          description: Not found
           schema:
             $ref: '#/definitions/APIError'
     post:
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      summary: Create a Google token and store it
-      description: "**Required ACL**: `auth.users.{user_uuid}.external.google.create`"
+      summary: Ask for a verification URL and store code to get token
+      description: |
+        **Required ACL**: `auth.users.{user_uuid}.external.google.create`.
+
+        More info on Google permissions: https://developers.google.com/identity/protocols/googlescopes"
       tags:
         - users
         - google
@@ -33,23 +34,18 @@ paths:
         - $ref: '#/parameters/user_uuid'
         - name: body
           in: body
-          required: true
           schema:
-            $ref: '#/definitions/Post'
+            $ref: '#/definitions/GooglePost'
       responses:
-        '200':
-          description: The auth data
+        '201':
+          description: Authentication url
           schema:
-            $ref: '#/definitions/PostResult'
+            $ref: '#/definitions/GooglePostResult'
         '400':
           description: Invalid body
           schema:
             $ref: '#/definitions/APIError'
     delete:
-      consumes:
-        - application/json
-      produces:
-        - application/json
       summary: Delete a Google token
       description: "**Required ACL**: `auth.users.{user_uuid}.external.google.delete`"
       tags:
@@ -59,19 +55,51 @@ paths:
         - $ref: '#/parameters/user_uuid'
       responses:
         '204':
-          description: The auth data
+          description: External authentication deleted
+        '401':
+          description: Unauthorized
           schema:
-            $ref: '#/definitions/PostResult'
+            $ref: '#/definitions/APIError'
+        '404':
+          description: Not found
+          schema:
+            $ref: '#/definitions/APIError'
 definitions:
-  Post:
+  GoogleGetResult:
+    type: object
+    properties:
+      access_token:
+        type: string
+        description: Google token
+      scope:
+        type: string
+        description: Scope permissions given to the `access token`
+      token_expiration:
+        type: integer
+        description: Token expiration
+    required:
+      - access_token
+      - scope
+      - token_expiration
+  GooglePost:
     type: object
     properties:
       scope:
+        description: Scope permissions requested
+        example:
+          - https://www.googleapis.com/auth/userinfo.profile
+          - https://www.googleapis.com/auth/contacts
         type: array
         items:
           type: string
-  PostResult:
+        default:
+          scope:
+            - https://www.googleapis.com/auth/userinfo.profile
+            - https://www.googleapis.com/auth/contacts
+  GooglePostResult:
     type: object
+    required:
+      - verification_url
     properties:
       verification_url:
         type: string

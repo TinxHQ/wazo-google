@@ -3,10 +3,10 @@ enabled_external_auth_plugins:
 
 google:
   authorization_base_url: 'https://accounts.google.com/o/oauth2/v2/auth'
-  redirect_uri: 'https://oauth.wazo.io/google/authorize'
+  redirect_uri: 'http://oauth2sync:80/google/authorize'
   scope: [
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/contacts'
     ]
-  token_url: 'https://www.googleapis.com/oauth2/v4/token'
-  websocket_host: 'wss://oauth.wazo.io'
+  token_url: 'http://oauth2sync:80/google/token'
+  websocket_host: 'ws://oauth2sync:80'
