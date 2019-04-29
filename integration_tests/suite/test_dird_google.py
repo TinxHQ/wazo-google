@@ -1,6 +1,7 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+import pytest
 import requests
 
 from hamcrest import (
@@ -31,6 +32,7 @@ MAIN_TENANT = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeee10'
 SUB_TENANT = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeee11'
 
 
+@pytest.mark.skip(reason='Not implemented')
 class TestGooglePlugin(BaseGooglePluginTestCase):
 
     asset = 'plugin_dird_google'
@@ -91,6 +93,7 @@ class TestGooglePlugin(BaseGooglePluginTestCase):
         ))
 
 
+@pytest.mark.skip(reason='Not implemented')
 class TestGooglePluginWrongEndpoint(BaseGooglePluginTestCase):
 
     asset = 'plugin_dird_google'
@@ -123,6 +126,7 @@ class TestGooglePluginWrongEndpoint(BaseGooglePluginTestCase):
         assert_that(result, is_(empty()))
 
 
+@pytest.mark.skip(reason='Not implemented')
 class TestDirdClientGooglePlugin(BaseGoogleTestCase):
 
     asset = 'dird_google'
@@ -247,6 +251,7 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
         ))
 
 
+@pytest.mark.skip(reason='Not implemented')
 class TestDirdGooglePlugin(BaseGoogleTestCase):
 
     asset = 'dird_google'
@@ -353,6 +358,7 @@ class TestDirdGooglePlugin(BaseGoogleTestCase):
         )
 
 
+@pytest.mark.skip(reason='Not implemented')
 class TestDirdGooglePluginNoEndpoint(BaseGoogleTestCase):
 
     asset = 'dird_google'
@@ -390,6 +396,7 @@ class TestDirdGooglePluginNoEndpoint(BaseGoogleTestCase):
         )
 
 
+@pytest.mark.skip(reason='Not implemented')
 class TestDirdGooglePluginErrorEndpoint(BaseGoogleTestCase):
 
     asset = 'dird_google'
