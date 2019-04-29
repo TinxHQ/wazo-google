@@ -3,3 +3,6 @@ dist
 *.egg-info
 *.swp
 __pycache__
+.tox
+pycodestyle.txt
+pylint.txt
