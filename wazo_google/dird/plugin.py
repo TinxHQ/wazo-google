@@ -23,10 +23,10 @@ class GooglePlugin(BaseSourcePlugin):
         format_columns = dependencies['config'].get(self.FORMAT_COLUMNS, {})
         if 'reverse' not in format_columns:
             logger.info(
-                'no "reverse" column has been configured on %s will use "givenName"',
+                'no "reverse" column has been configured on %s will use "name"',
                 self.name
             )
-            format_columns['reverse'] = '{givenName}'
+            format_columns['reverse'] = '{name}'
 
         self._SourceResult = make_result_class(
             'google',
@@ -57,8 +57,10 @@ class GooglePlugin(BaseSourcePlugin):
             return []
 
         contacts = self.google.get_contacts_with_term(google_token, term)
+        lowered_term = term.lower()
+        filtered_contacts = [c for c in contacts if self._search_match_predicate(c, lowered_term)]
 
-        return [self._SourceResult(c) for c in contacts]
+        return [self._SourceResult(c) for c in filtered_contacts]
 
     def list(self, unique_ids, args=None):
         try:
@@ -86,24 +88,17 @@ class GooglePlugin(BaseSourcePlugin):
             return None
 
         contacts = self.google.get_contacts(google_token)
-        updated_contacts = self._update_contact_fields(contacts)
         lowered_term = term.lower()
 
-        for contact in updated_contacts:
+        for contact in contacts:
             if self._first_match_predicate(lowered_term, contact):
                 return self._SourceResult(contact)
 
     def _first_match_predicate(self, term, contact):
         for column in self._first_matched_columns:
             column_value = contact.get(column) or ''
-
-            if not isinstance(column_value, list):
-                if term == str(column_value).lower():
-                    return True
-            else:
-                for item in column_value:
-                    if term == item.lower():
-                        return True
+            if term == str(column_value).lower():
+                return True
         return False
 
     def _get_google_token(self, xivo_user_uuid, token=None, **ignored):
@@ -112,3 +107,15 @@ class GooglePlugin(BaseSourcePlugin):
             raise GoogleTokenNotFoundException()
 
         return services.get_google_access_token(xivo_user_uuid, token, **self.auth)
+
+    def _search_match_predicate(self, contact, term):
+        for field in self._searched_columns:
+            column_value = contact.get(field) or ''
+            if not isinstance(column_value, dict):
+                if term in column_value.lower():
+                    return True
+            else:
+                for value in column_value.values():
+                    if term in value.lower():
+                        return True
+        return False
