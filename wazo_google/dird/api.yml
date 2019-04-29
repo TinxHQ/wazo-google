@@ -75,15 +75,17 @@ paths:
             $ref: '#/definitions/GoogleSource'
           examples:
             application/json:
+              auth:
+                host: localhost
+                port: 9497
+                verify_certificate: /usr/share/xivo-certs/server.crt
+                version: 0.1
               format_columns:
-                name: "{givenName} {surname}"
-                phone_mobile: "{mobilePhone}"
-                number: "{businessPhones[0]}"
-                reverse: "{givenName} {surname}"
-                email: "{email}"
+                phone: "{numbers[home]}"
+                phone_mobile: "{numbers[mobile]}"
+                reverse: "{name}"
+                email: "{emails[home]}"
               name: google
-              searched_columns: ["displayName", "mobilePhone"]
-              first_matched_columns: ["businessPhones", "mobilePhone"]
         '400':
           $ref: '#/responses/CreateError'
         '409':
