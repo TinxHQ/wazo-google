@@ -16,6 +16,19 @@ class TestGoogleContactFormatter(unittest.TestCase):
     def setUp(self):
         self.formatter = services.ContactFormatter()
 
+    def test_format_id(self):
+        google_contact = {
+            'id': {
+                '$t': 'http://www.google.com/m8/feeds/contacts/me%40example.com/base/72b6b4840bf772e6',
+            },
+        }
+
+        formatted_contact = self.formatter.format(google_contact)
+
+        assert_that(formatted_contact, has_entries(
+            id='72b6b4840bf772e6',
+        ))
+
     def test_format_name(self):
         google_contact = {
             'title': {

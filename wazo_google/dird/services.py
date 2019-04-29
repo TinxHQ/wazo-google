@@ -81,7 +81,7 @@ class ContactFormatter:
 
     def format(self, contact):
         return {
-            'id': 42,
+            'id': self._extract_id(contact),
             'name': self._extract_name(contact),
             'numbers': self._extract_numbers(contact),
             'emails': self._extract_emails(contact),
@@ -103,6 +103,15 @@ class ContactFormatter:
             emails[type_] = email
 
         return emails
+
+    @staticmethod
+    def _extract_id(contact):
+        url = contact.get('id', {}).get('$t', '')
+        if not url:
+            return
+
+        _, id_ = url.rsplit('/', 1)
+        return id_
 
     @classmethod
     def _extract_numbers(cls, contact):
