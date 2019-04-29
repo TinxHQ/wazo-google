@@ -7,7 +7,7 @@ from setuptools import setup
 
 setup(
     name='wazo_google',
-    version='1.0.0',
+    version='1.1.0',
     description='Wazo Google connector',
 
     author='Wazo Authors',
@@ -24,11 +24,11 @@ setup(
         'wazo_auth.external_auth': [
             'google = wazo_google.auth.plugin:GooglePlugin',
         ],
-        # 'wazo_dird.backends': [
-        #     'google = wazo_google.dird.plugin:GooglePlugin',
-        # ],
-        # 'wazo_dird.views': [
-        #     'google_view = wazo_google.dird.view:GoogleView'
-        # ]
+        'wazo_dird.backends': [
+            'google = wazo_google.dird.plugin:GooglePlugin',
+        ],
+        'wazo_dird.views': [
+            'google_view = wazo_google.dird.view:GoogleView'
+        ]
     }
 )

@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-from operator import itemgetter
 
 from wazo_dird import BaseSourcePlugin, make_result_class
 
@@ -59,21 +58,8 @@ class GooglePlugin(BaseSourcePlugin):
             return []
 
         contacts = self.google.get_contacts_with_term(google_token, term, self.endpoint)
-        updated_contacts = self._update_contact_fields(contacts)
 
-        lowered_term = term.lower()
-
-        def match_fn(contact):
-            for column in self._searched_columns:
-                column_value = contact.get(column) or ''
-                if lowered_term in str(column_value).lower():
-                    return True
-            return False
-
-        filtered_contacts = [c for c in updated_contacts if match_fn(c)]
-        sorted_contacts = sorted(filtered_contacts, key=itemgetter('givenName'))
-
-        return [self._SourceResult(c) for c in sorted_contacts]
+        return [self._SourceResult(c) for c in contacts]
 
     def list(self, unique_ids, args=None):
         try:
@@ -128,10 +114,3 @@ class GooglePlugin(BaseSourcePlugin):
             raise GoogleTokenNotFoundException()
 
         return services.get_google_access_token(xivo_user_uuid, token, **self.auth)
-
-    @staticmethod
-    def _update_contact_fields(contacts):
-        for contact in contacts:
-            contact.setdefault('givenName', '')
-            contact['email'] = services.get_first_email(contact)
-        return contacts

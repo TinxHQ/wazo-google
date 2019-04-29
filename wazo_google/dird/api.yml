@@ -155,8 +155,6 @@ definitions:
       - properties:
           auth:
             $ref: '#/definitions/WazoAuthConfig'
-          confd:
-            $ref: '#/definitions/ConfdConfig'
           endpoint:
             description: Endpoint where to get the information from
             example: "https://graph.google.com/v1.0/me/contacts"

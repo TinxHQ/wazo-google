@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-import uuid
 
 import requests
 
@@ -18,21 +17,25 @@ class GoogleService:
 
     USER_AGENT = 'wazo_ua/1.0'
 
+    def __init__(self):
+        self.formatter = ContactFormatter()
+
     def get_contacts_with_term(self, google_token, term, url):
+        url = 'https://google.com/m8/feeds/contacts/default/full'
         headers = self.headers(google_token)
         query_params = {
-            "search": term
+            'q': term,
+            'alt': 'json',
+            'max-results': 10000,
         }
-        try:
-            response = requests.get(url, headers=headers, params=query_params)
-            if response.status_code == 200:
-                logger.debug('Sucessfully fetched contacts from google')
-                return response.json().get('value', [])
-            else:
-                return []
-        except requests.exceptions.RequestException as e:
-            logger.error('Unable to get contacts from this endpoint: %s, error : %s', url, e)
+
+        response = requests.get(url, headers=headers, params=query_params)
+        if response.status_code != 200:
             return []
+
+        logger.debug('Sucessfully fetched contacts from google')
+        for contact in response.json().get('feed', {}).get('entry', []):
+            yield self.formatter.format(contact)
 
     def get_contacts(self, google_token, url):
         headers = self.headers(google_token)
@@ -50,10 +53,8 @@ class GoogleService:
     def headers(self, google_token):
         return {
             'User-Agent': self.USER_AGENT,
-            'Authorization': 'Bearer {0}'.format(google_token),
+            'Authorization': 'Bearer {}'.format(google_token),
             'Accept': 'application/json',
-            'client-request-id': str(uuid.uuid4),
-            'return-client-request-id': 'true'
         }
 
 
@@ -80,16 +81,18 @@ class ContactFormatter:
 
     def format(self, contact):
         return {
+            'id': 42,
             'name': self._extract_name(contact),
             'numbers': self._extract_numbers(contact),
             'emails': self._extract_emails(contact),
         }
 
-    def _extract_emails(self, contact):
+    @classmethod
+    def _extract_emails(cls, contact):
         emails = {}
 
         for email in contact.get('gd$email', []):
-            type_ = self._extract_type(email)
+            type_ = cls._extract_type(email)
             if not type_:
                 continue
 
@@ -101,10 +104,11 @@ class ContactFormatter:
 
         return emails
 
-    def _extract_numbers(self, contact):
+    @classmethod
+    def _extract_numbers(cls, contact):
         numbers = {}
         for number in contact.get('gd$phoneNumber', []):
-            type_ = self._extract_type(number)
+            type_ = cls._extract_type(number)
             if not type_:
                 continue
 
@@ -112,17 +116,19 @@ class ContactFormatter:
             if not number:
                 continue
 
-            for char in self.chars_to_remove:
+            for char in cls.chars_to_remove:
                 number = number.replace(char, '')
 
             numbers[type_] = number
 
         return numbers
 
-    def _extract_name(self, contact):
+    @staticmethod
+    def _extract_name(contact):
         return contact.get('title', {}).get('$t', '')
 
-    def _extract_type(self, entry):
+    @staticmethod
+    def _extract_type(entry):
         rel = entry.get('rel')
         if rel:
             _, type_ = rel.rsplit('#', 1)
