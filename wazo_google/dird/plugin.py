@@ -17,10 +17,9 @@ class GooglePlugin(BaseSourcePlugin):
         config = dependencies['config']
         self.auth = config['auth']
         self.name = config['name']
-        self.endpoint = config['endpoint']
         self.google = services.GoogleService()
-
         self.unique_column = 'id'
+
         format_columns = dependencies['config'].get(self.FORMAT_COLUMNS, {})
         if 'reverse' not in format_columns:
             logger.info(
@@ -57,7 +56,7 @@ class GooglePlugin(BaseSourcePlugin):
         except GoogleTokenNotFoundException:
             return []
 
-        contacts = self.google.get_contacts_with_term(google_token, term, self.endpoint)
+        contacts = self.google.get_contacts_with_term(google_token, term)
 
         return [self._SourceResult(c) for c in contacts]
 
@@ -67,9 +66,8 @@ class GooglePlugin(BaseSourcePlugin):
         except GoogleTokenNotFoundException:
             return []
 
-        contacts = self.google.get_contacts(google_token, self.endpoint)
-        updated_contacts = self._update_contact_fields(contacts)
-        filtered_contacts = [c for c in updated_contacts if c[self.unique_column] in unique_ids]
+        contacts = self.google.get_contacts(google_token)
+        filtered_contacts = [c for c in contacts if c[self.unique_column] in unique_ids]
 
         return [self._SourceResult(contact) for contact in filtered_contacts]
 
@@ -87,7 +85,7 @@ class GooglePlugin(BaseSourcePlugin):
             logger.debug('could not find a matching google token, aborting first_match')
             return None
 
-        contacts = self.google.get_contacts(google_token, self.endpoint)
+        contacts = self.google.get_contacts(google_token)
         updated_contacts = self._update_contact_fields(contacts)
         lowered_term = term.lower()
 

@@ -16,39 +16,35 @@ logger = logging.getLogger(__name__)
 class GoogleService:
 
     USER_AGENT = 'wazo_ua/1.0'
+    url = 'https://google.com/m8/feeds/contacts/default/full'
 
     def __init__(self):
         self.formatter = ContactFormatter()
 
-    def get_contacts_with_term(self, google_token, term, url):
-        url = 'https://google.com/m8/feeds/contacts/default/full'
+    def get_contacts_with_term(self, google_token, term):
+        for contact in self._fetch(google_token, term=term):
+            yield contact
+
+    def get_contacts(self, google_token):
+        for contact in self._fetch(google_token):
+            yield contact
+
+    def _fetch(self, google_token, term=None):
         headers = self.headers(google_token)
         query_params = {
-            'q': term,
             'alt': 'json',
             'max-results': 10000,
         }
+        if term:
+            query_params['q'] = term
 
-        response = requests.get(url, headers=headers, params=query_params)
+        response = requests.get(self.url, headers=headers, params=query_params)
         if response.status_code != 200:
             return []
 
         logger.debug('Sucessfully fetched contacts from google')
         for contact in response.json().get('feed', {}).get('entry', []):
             yield self.formatter.format(contact)
-
-    def get_contacts(self, google_token, url):
-        headers = self.headers(google_token)
-        try:
-            response = requests.get(url, headers=headers)
-            if response.status_code == 200:
-                logger.debug('Successfully fetched contacts from google')
-                return response.json().get('value', [])
-            else:
-                logger.error('An error occured while fetching information from google endpoint')
-                raise UnexpectedEndpointException(endpoint=url, error_code=response.status_code)
-        except requests.exceptions.RequestException:
-            raise UnexpectedEndpointException(endpoint=url)
 
     def headers(self, google_token):
         return {
