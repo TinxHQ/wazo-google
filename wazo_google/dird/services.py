@@ -72,3 +72,60 @@ def get_google_access_token(user_uuid, wazo_token, **auth_config):
         raise GoogleTokenNotFoundException(user_uuid)
     except requests.exceptions.RequestException as e:
         logger.error('Error occured while connecting to wazo-auth, error: %s', e)
+
+
+class ContactFormatter:
+
+    chars_to_remove = [' ', '-', '(', ')']
+
+    def format(self, contact):
+        return {
+            'name': self._extract_name(contact),
+            'numbers': self._extract_numbers(contact),
+            'emails': self._extract_emails(contact),
+        }
+
+    def _extract_emails(self, contact):
+        emails = {}
+
+        for email in contact.get('gd$email', []):
+            type_ = self._extract_type(email)
+            if not type_:
+                continue
+
+            email = email.get('address')
+            if not email:
+                continue
+
+            emails[type_] = email
+
+        return emails
+
+    def _extract_numbers(self, contact):
+        numbers = {}
+        for number in contact.get('gd$phoneNumber', []):
+            type_ = self._extract_type(number)
+            if not type_:
+                continue
+
+            number = number.get('$t')
+            if not number:
+                continue
+
+            for char in self.chars_to_remove:
+                number = number.replace(char, '')
+
+            numbers[type_] = number
+
+        return numbers
+
+    def _extract_name(self, contact):
+        return contact.get('title', {}).get('$t', '')
+
+    def _extract_type(self, entry):
+        rel = entry.get('rel')
+        if rel:
+            _, type_ = rel.rsplit('#', 1)
+        else:
+            type_ = entry.get('label')
+        return type_
