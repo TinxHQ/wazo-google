@@ -1,6 +1,7 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
+from contextlib import contextmanager
 import requests
 
 from hamcrest import (
@@ -13,6 +14,8 @@ from hamcrest import (
     has_properties,
     not_,
 )
+from mock import ANY
+from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
 
 from .helpers.base_dird import (
@@ -23,11 +26,14 @@ from .helpers.constants import (
     UNKNOWN_UUID,
     VALID_TOKEN_MAIN_TENANT,
     VALID_TOKEN_SUB_TENANT,
+    MAIN_TENANT,
     SUB_TENANT,
 )
 from .helpers.fixtures import http as fixtures
 
+HTTP_401 = has_properties(response=has_properties(status_code=401))
 HTTP_404 = has_properties(response=has_properties(status_code=404))
+HTTP_409 = has_properties(response=has_properties(status_code=409))
 
 
 class BaseGoogleCRUDTestCase(BaseGoogleAssetTestCase):
@@ -192,6 +198,85 @@ class TestList(BaseGoogleCRUDTestCase):
         )
 
 
+class TestPost(BaseGoogleCRUDTestCase):
+
+    valid_body = {'name': 'google'}
+
+    def test_invalid_body(self):
+        try:
+            self.client.backends.create_source('google', {})
+        except Exception as e:
+            assert_that(e.response.status_code, equal_to(400))
+            assert_that(e.response.json(), has_entries(
+                message=ANY,
+                error_id='invalid-data',
+                details=has_entries(name=ANY),
+            ))
+        else:
+            self.fail('Should have raised')
+
+    def test_minimal_body(self):
+        with self.source(self.client, self.valid_body) as source:
+            assert_that(source, has_entries(
+                uuid=uuid_(),
+                name='google',
+                auth=has_entries(
+                    host='localhost',
+                    port=9497,
+                    verify_certificate=True,
+                ),
+            ))
+
+    def test_duplicate(self):
+        with self.source(self.client, self.valid_body):
+            assert_that(
+                calling(self.client.backends.create_source).with_args('google', self.valid_body),
+                raises(Exception).matching(HTTP_409),
+            )
+
+    def test_multi_tenant(self):
+        main_tenant_client = self.get_client(VALID_TOKEN_MAIN_TENANT)
+        sub_tenant_client = self.get_client(VALID_TOKEN_SUB_TENANT)
+
+        with self.source(main_tenant_client, self.valid_body) as result:
+            assert_that(result, has_entries(uuid=uuid_(), tenant_uuid=MAIN_TENANT))
+
+        with self.source(main_tenant_client, self.valid_body, tenant_uuid=SUB_TENANT) as result:
+            assert_that(result, has_entries(uuid=uuid_(), tenant_uuid=SUB_TENANT))
+
+        with self.source(sub_tenant_client, self.valid_body) as result:
+            assert_that(result, has_entries(uuid=uuid_(), tenant_uuid=SUB_TENANT))
+
+        assert_that(
+            calling(sub_tenant_client.backends.create_source).with_args(
+                'google', self.valid_body, tenant_uuid=MAIN_TENANT,
+            ),
+            raises(Exception).matching(HTTP_401),
+        )
+
+        with self.source(main_tenant_client, self.valid_body):
+            assert_that(
+                calling(sub_tenant_client.backends.create_source).with_args(
+                    'google', self.valid_body,
+                ),
+                not_(raises(Exception)),
+            )
+
+    @contextmanager
+    def source(self, client, *args, **kwargs):
+        source = client.backends.create_source('google', *args, **kwargs)
+        try:
+            yield source
+        finally:
+            try:
+                client.backends.delete_source('google', source['uuid'])
+            except Exception as e:
+                response = getattr(e, 'response', None)
+                status_code = getattr(response, 'status_code', None)
+                if status_code != 404:
+                    raise
+
+
 class TestDirdClientGooglePlugin(BaseGoogleTestCase):
 
     asset = 'dird_google'
@@ -230,15 +315,6 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
             pass
 
         super().tearDown()
-
-    def test_when_create_source_then_no_error(self):
-        assert_that(
-            calling(self.client.backends.create_source).with_args(
-                backend=self.BACKEND,
-                body=self.config(),
-            ),
-            not_(raises(requests.HTTPError))
-        )
 
     def test_given_source_when_get_then_ok(self):
         config = self.config()

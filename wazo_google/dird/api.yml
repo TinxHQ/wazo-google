@@ -180,30 +180,6 @@ definitions:
       - required:
         - name
         - auth
-        - confd
-  GoogleSourcePostFormatColumns:
-    title: format_columns
-    properties:
-      name:
-        example: "{firstname} {lastname}"
-        type: string
-      display_name:
-        example: "{firstname} {lastname}"
-        type: string
-      phone:
-        example: "{phone}"
-        type: string
-      phone_mobile:
-        example: "{mobile}"
-        type: string
-      reverse:
-        example: "{firstname} {lastname}"
-        type: string
-    required:
-      - name
-      - display_name
-      - phone_mobile
-      - reverse
   GoogleContactList:
     properties:
       items:
