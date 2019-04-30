@@ -7,10 +7,10 @@ from hamcrest import (
     assert_that,
     calling,
     contains,
+    contains_inanyorder,
     equal_to,
     has_entries,
     has_properties,
-    has_property,
     not_,
 )
 from xivo_test_helpers.hamcrest.raises import raises
@@ -75,6 +75,120 @@ class TestDelete(BaseGoogleCRUDTestCase):
         assert_that(
             calling(main_tenant_client.backends.delete_source).with_args('google', sub['uuid']),
             not_(raises(Exception)),
+        )
+
+
+class TestList(BaseGoogleCRUDTestCase):
+
+    def list_(self, *args, **kwargs):
+        return self.client.backends.list_sources('google', *args, **kwargs)
+
+    @fixtures.google_source(name='abc')
+    @fixtures.google_source(name='bcd')
+    @fixtures.google_source(name='cde')
+    def test_searches(self, c, b, a):
+        assert_that(self.list_(), has_entries(
+            items=contains_inanyorder(a, b, c),
+            total=3,
+            filtered=3,
+        ))
+
+        assert_that(self.list_(name='abc'), has_entries(
+            items=contains(a),
+            total=3,
+            filtered=1,
+        ))
+
+        assert_that(self.list_(uuid=c['uuid']), has_entries(
+            items=contains(c),
+            total=3,
+            filtered=1,
+        ))
+
+        assert_that(self.list_(search='b'), has_entries(
+            items=contains_inanyorder(a, b),
+            total=3,
+            filtered=2,
+        ))
+
+    @fixtures.google_source(name='abc')
+    @fixtures.google_source(name='bcd')
+    @fixtures.google_source(name='cde')
+    def test_pagination(self, c, b, a):
+        assert_that(self.list_(order='name'), has_entries(
+            items=contains(a, b, c),
+            total=3,
+            filtered=3,
+        ))
+
+        assert_that(self.list_(order='name', direction='desc'), has_entries(
+            items=contains(c, b, a),
+            total=3,
+            filtered=3,
+        ))
+
+        assert_that(self.list_(order='name', limit=2), has_entries(
+            items=contains(a, b),
+            total=3,
+            filtered=3,
+        ))
+
+        assert_that(self.list_(order='name', offset=2), has_entries(
+            items=contains(c),
+            total=3,
+            filtered=3,
+        ))
+
+    @fixtures.google_source(name='abc', token=VALID_TOKEN_MAIN_TENANT)
+    @fixtures.google_source(name='bcd', token=VALID_TOKEN_MAIN_TENANT)
+    @fixtures.google_source(name='cde', token=VALID_TOKEN_SUB_TENANT)
+    def test_multi_tenant(self, c, b, a):
+        main_tenant_client = self.get_client(VALID_TOKEN_MAIN_TENANT)
+        sub_tenant_client = self.get_client(VALID_TOKEN_SUB_TENANT)
+
+        assert_that(
+            main_tenant_client.backends.list_sources('google'),
+            has_entries(
+                items=contains_inanyorder(a, b),
+                total=2,
+                filtered=2,
+            )
+        )
+
+        assert_that(
+            main_tenant_client.backends.list_sources('google', recurse=True),
+            has_entries(
+                items=contains_inanyorder(a, b, c),
+                total=3,
+                filtered=3,
+            )
+        )
+
+        assert_that(
+            main_tenant_client.backends.list_sources('google', tenant_uuid=SUB_TENANT),
+            has_entries(
+                items=contains_inanyorder(c),
+                total=1,
+                filtered=1,
+            )
+        )
+
+        assert_that(
+            sub_tenant_client.backends.list_sources('google'),
+            has_entries(
+                items=contains_inanyorder(c),
+                total=1,
+                filtered=1,
+            )
+        )
+
+        assert_that(
+            sub_tenant_client.backends.list_sources('google', recurse=True),
+            has_entries(
+                items=contains_inanyorder(c),
+                total=1,
+                filtered=1,
+            )
         )
 
 
@@ -151,12 +265,4 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
         assert_that(updated, has_entries(
             uuid=source['uuid'],
             name='a-new-name',
-        ))
-
-    def test_given_source_when_list_sources_then_ok(self):
-        source = self.client.backends.create_source(backend=self.BACKEND, body=self.config())
-
-        sources = self.client.backends.list_sources(backend=self.BACKEND)
-        assert_that(sources, has_entries(
-            items=contains(source),
         ))
