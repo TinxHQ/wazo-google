@@ -42,6 +42,7 @@ paths:
       description: '**Required ACL:** `dird.backends.google.sources.read`'
       tags:
         - configuration
+        - google
       parameters:
         - $ref: '#/parameters/tenantuuid'
         - $ref: '#/parameters/recurse'
@@ -69,6 +70,7 @@ paths:
         * emails: a list of email addresses
       tags:
         - configuration
+        - google
       parameters:
         - $ref: '#/parameters/tenantuuid'
         - in: body
@@ -114,6 +116,7 @@ paths:
       description: '**Required ACL:** `dird.backends.google.sources.{source_uuid}.read`'
       tags:
         - configuration
+        - google
       parameters:
         - $ref: '#/parameters/tenantuuid'
         - $ref: '#/parameters/sourceuuid'
@@ -130,6 +133,7 @@ paths:
       description: '**Required ACL:** `dird.backends.google.sources.{source_uuid}.update`'
       tags:
         - configuration
+        - google
       parameters:
         - $ref: '#/parameters/tenantuuid'
         - $ref: '#/parameters/sourceuuid'
@@ -156,6 +160,7 @@ paths:
       description: '**Required ACL:** `dird.backends.google.sources.{source_uuid}.delete`'
       tags:
         - configuration
+        - google
       parameters:
         - $ref: '#/parameters/tenantuuid'
         - $ref: '#/parameters/sourceuuid'
