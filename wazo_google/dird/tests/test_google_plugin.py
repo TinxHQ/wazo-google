@@ -23,7 +23,7 @@ class TestGooglePlugin(TestCase):
             },
             'name': 'google',
             'user_agent': 'luigi',
-            'first_matched_columns': ['mobilePhone', 'businessPhones'],
+            'first_matched_columns': ['numbers'],
             'format_columns': {
                 'display_name': "{firstname} {lastname}",
                 'name': "{firstname} {lastname}",
@@ -49,18 +49,18 @@ class TestGooglePlugin(TestCase):
 
         mario = {
             'name': 'Mario Bros',
-            'mobilePhone': None,
-            'businessPhones': [],
+            'numbers': {},
         }
         luigi = {
             'name': 'Luigi Bros',
-            'mobilePhone': None,
-            'businessPhones': ['5555551234'],
+            'numbers': {'mobile': '5555551234'},
         }
         peach = {
             'name': 'Peach',
-            'mobilePhone': '5555551234',
-            'businessPhones': ['4185553212'],
+            'numbers': {
+                'mobile': '5555551234',
+                'business': '4185553212',
+            },
         }
 
         assert_that(self.source._first_match_predicate(term, mario), equal_to(False))

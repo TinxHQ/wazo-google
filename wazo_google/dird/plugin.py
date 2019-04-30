@@ -97,8 +97,13 @@ class GooglePlugin(BaseSourcePlugin):
     def _first_match_predicate(self, term, contact):
         for column in self._first_matched_columns:
             column_value = contact.get(column) or ''
-            if term == str(column_value).lower():
-                return True
+            if not isinstance(column_value, dict):
+                if term == str(column_value).lower():
+                    return True
+            else:
+                for value in column_value.values():
+                    if term == value.lower():
+                        return True
         return False
 
     def _get_google_token(self, xivo_user_uuid, token=None, **ignored):
