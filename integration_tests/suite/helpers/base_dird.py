@@ -68,9 +68,8 @@ class BaseGoogleTestCase(AssetLaunchingTestCase):
     }
 
     WARIO = {
-        'givenName': 'Wario',
-        'surname': 'Bros',
-        'mobilePhone': '',
+        'name': 'Wario Bros',
+        'numbers_by_label': {},
     }
 
     def setUp(self):

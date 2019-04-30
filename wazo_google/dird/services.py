@@ -79,26 +79,37 @@ class ContactFormatter:
         return {
             'id': self._extract_id(contact),
             'name': self._extract_name(contact),
+            'numbers_by_label': self._extract_numbers_by_label(contact),
             'numbers': self._extract_numbers(contact),
             'emails': self._extract_emails(contact),
         }
 
     @classmethod
     def _extract_emails(cls, contact):
-        emails = {}
-
+        emails = []
         for email in contact.get('gd$email', []):
-            type_ = cls._extract_type(email)
-            if not type_:
+            address = email.get('address')
+            if not address:
                 continue
-
-            email = email.get('address')
-            if not email:
-                continue
-
-            emails[type_] = email
-
+            emails.append(address)
         return emails
+
+    @classmethod
+    def _extract_numbers(cls, contact):
+        numbers_by_label = cls._extract_numbers_by_label(contact)
+        numbers = []
+        mobile = None
+
+        for type_, number in numbers_by_label.items():
+            if type_ == 'mobile':
+                mobile = number
+            else:
+                numbers.append(number)
+
+        if mobile:
+            numbers.append(mobile)
+
+        return numbers
 
     @staticmethod
     def _extract_id(contact):
@@ -110,7 +121,7 @@ class ContactFormatter:
         return id_
 
     @classmethod
-    def _extract_numbers(cls, contact):
+    def _extract_numbers_by_label(cls, contact):
         numbers = {}
         for number in contact.get('gd$phoneNumber', []):
             type_ = cls._extract_type(number)

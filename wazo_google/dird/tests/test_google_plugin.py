@@ -25,10 +25,10 @@ class TestGooglePlugin(TestCase):
             'user_agent': 'luigi',
             'first_matched_columns': ['numbers'],
             'format_columns': {
-                'display_name': "{firstname} {lastname}",
-                'name': "{firstname} {lastname}",
-                'reverse': "{firstname} {lastname}",
-                'phone_mobile': "{mobile}",
+                'display_name': "{name}",
+                'reverse': "{name}",
+                'phone_mobile': "{numbers_by_label[mobile]}",
+                'phone': '{numbers[0]}',
             },
         },
     }
@@ -53,14 +53,19 @@ class TestGooglePlugin(TestCase):
         }
         luigi = {
             'name': 'Luigi Bros',
-            'numbers': {'mobile': '5555551234'},
+            'numbers_by_label': {'mobile': '5555551234'},
+            'numbers': ['5555551234'],
         }
         peach = {
             'name': 'Peach',
-            'numbers': {
+            'numbers_by_label': {
                 'mobile': '5555551234',
                 'business': '4185553212',
             },
+            'numbers': [
+                '5555551234',
+                '4185553212',
+            ],
         }
 
         assert_that(self.source._first_match_predicate(term, mario), equal_to(False))

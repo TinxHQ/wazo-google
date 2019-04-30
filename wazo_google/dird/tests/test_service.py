@@ -5,6 +5,7 @@ import unittest
 
 from hamcrest import (
     assert_that,
+    contains,
     has_entries,
 )
 
@@ -67,10 +68,15 @@ class TestGoogleContactFormatter(unittest.TestCase):
         formatted_contact = self.formatter.format(google_contact)
 
         assert_that(formatted_contact, has_entries(
-            numbers=has_entries(
+            numbers_by_label=has_entries(
                 mobile='+15551234567',
                 home='+15551239876',
                 custom='5551231111',
+            ),
+            numbers=contains(
+                '+15551239876',
+                '5551231111',
+                '+15551234567',
             ),
         ))
 
@@ -91,8 +97,8 @@ class TestGoogleContactFormatter(unittest.TestCase):
         formatted_contact = self.formatter.format(google_contact)
 
         assert_that(formatted_contact, has_entries(
-            emails=has_entries(
-                home='home@example.com',
-                custom='other@example.com',
+            emails=contains(
+                'home@example.com',
+                'other@example.com',
             ),
         ))

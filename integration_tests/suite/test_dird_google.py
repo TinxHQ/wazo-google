@@ -41,16 +41,18 @@ class TestGooglePlugin(BaseGooglePluginTestCase):
                 'port': self.service_port(9497, 'auth-mock'),
                 'verify_certificate': False,
             },
-            'first_matched_columns': ['businessPhones', 'mobilePhone'],
+            'first_matched_columns': ['numbers'],
             'format_columns': {
-                'number': '{businessPhones[0]}',
-                'email': '{emailAddresses[0][address]}',
+                'phone_mobile': '{numbers_by_label[mobile]}',
+                'phone': '{numbers[0]}',
+                'email': '{emails[0]}',
+                'reverse': '{name}',
             },
             'name': 'google',
             'searched_columns': [
-                "givenName",
-                "surname",
-                "businessPhones"
+                "name",
+                "emails",
+                "numbers",
             ],
             'type': 'google',
         }
@@ -137,7 +139,7 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
         result = self.client.backends.list_contacts_from_source(backend=self.BACKEND, source_uuid=source['uuid'])
         assert_that(result, has_entries(
             items=has_item(
-                has_entries(givenName='Wario'),
+                has_entries(name='Wario'),
             ),
         ))
 
@@ -166,15 +168,15 @@ class TestDirdGooglePlugin(BaseGoogleTestCase):
             },
             'first_matched_columns': [],
             'format_columns': {
-                'firstname': "{givenName}",
-                'lastname': "{surname}",
-                'number': "{businessPhones[0]}",
+                'phone': "{numbers[0]}",
+                'phone_mobile': "{numbers_by_label[mobile]}",
+                'reverse': '{name}',
             },
             'name': 'google',
             'searched_columns': [
-                "givenName",
-                "surname",
-                "businessPhones"
+                'name',
+                "emails",
+                "numbers",
             ],
             'type': 'google',
         }
@@ -213,10 +215,8 @@ class TestDirdGooglePlugin(BaseGoogleTestCase):
             total=1,
             filtered=1,
             items=contains(has_entries(
-                displayName='Wario Bros',
-                surname='Bros',
-                businessPhones=['5555555555'],
-                givenName='Wario',
+                name='Wario Bros',
+                numbers=['5555555555'],
             )),
         ))
 

@@ -57,7 +57,16 @@ paths:
     post:
       operationId: create_google_source
       summary: Configure a source for the google backend
-      description: '**Required ACL:** `dird.backends.google.sources.create`'
+      description: |
+        **Required ACL:** `dird.backends.google.sources.create`
+
+        This resource configures a Google source for wazo-dird. Columns that are available from this source
+        are:
+
+        * name: the contact name
+        * numbers: a list of phone numbers
+        * numbers_by_label: a map of type to numbers {'mobile': <number>, 'home': <number>}
+        * emails: a list of email addresses
       tags:
         - configuration
       parameters:
@@ -81,11 +90,17 @@ paths:
                 verify_certificate: /usr/share/xivo-certs/server.crt
                 version: 0.1
               format_columns:
-                phone: "{numbers[home]}"
-                phone_mobile: "{numbers[mobile]}"
+                phone: "{numbers[0]}"
+                phone_mobile: "{numbers_by_label[mobile]}"
                 reverse: "{name}"
-                email: "{emails[home]}"
+                email: "{emails[0]}"
               name: google
+              first_matched_columns:
+                - numbers
+              searched_columns:
+                - numbers
+                - emails
+                - name
         '400':
           $ref: '#/responses/CreateError'
         '409':
