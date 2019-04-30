@@ -47,10 +47,26 @@ class BackendWrapper:
         return [r.fields for r in results]
 
 
-class BaseGoogleTestCase(AssetLaunchingTestCase):
+class BaseGoogleAssetTestCase(AssetLaunchingTestCase):
 
     assets_root = ASSET_ROOT
     service = 'dird'
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.host = 'localhost'
+        cls.port = cls.service_port(9489, 'dird')
+
+    @property
+    def client(self):
+        return self.get_client()
+
+    def get_client(self, token=VALID_TOKEN_MAIN_TENANT):
+        return DirdClient(self.host, self.port, token=token, verify_certificate=False)
+
+
+class BaseGoogleTestCase(BaseGoogleAssetTestCase):
 
     GOOGLE_EXTERNAL_AUTH = {
         "access_token": "an-access-token",
@@ -74,14 +90,6 @@ class BaseGoogleTestCase(AssetLaunchingTestCase):
 
     def setUp(self):
         super().setUp()
-        port = self.service_port(9489, 'dird')
-        dird_config = {
-            'host': 'localhost',
-            'port': port,
-            'token': VALID_TOKEN_MAIN_TENANT,
-            'verify_certificate': False,
-        }
-        self.client = DirdClient(**dird_config)
         self.source = self.client.backends.create_source(
             backend=self.BACKEND,
             body=self.config(),
