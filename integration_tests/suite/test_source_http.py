@@ -31,6 +31,7 @@ from .helpers.constants import (
 )
 from .helpers.fixtures import http as fixtures
 
+HTTP_400 = has_properties(response=has_properties(status_code=400))
 HTTP_401 = has_properties(response=has_properties(status_code=401))
 HTTP_404 = has_properties(response=has_properties(status_code=404))
 HTTP_409 = has_properties(response=has_properties(status_code=409))
@@ -277,6 +278,80 @@ class TestPost(BaseGoogleCRUDTestCase):
                     raise
 
 
+class TestPut(BaseGoogleCRUDTestCase):
+
+    new_body = {
+        'name': 'new',
+        'searched_columns': ['name', 'numbers', 'emails'],
+        'first_matched_columns': ['numbers'],
+        'format_columns': {
+            'reverse': '{name}',
+            'phone': '{numbers[0]}',
+            'phone_mobile': '{numbers[mobile]}',
+            'email': '{emails[0]}',
+        }
+    }
+
+    @fixtures.google_source(name='foobar')
+    @fixtures.google_source(name='other')
+    def test_put(self, foobar, other):
+        assert_that(
+            calling(self.edit).with_args(self.client, foobar['uuid'], other),
+            raises(Exception).matching(HTTP_409),
+        )
+
+        assert_that(
+            calling(self.edit).with_args(self.client, UNKNOWN_UUID, self.new_body),
+            raises(Exception).matching(HTTP_404),
+        )
+
+        assert_that(
+            calling(self.edit).with_args(self.client, foobar['uuid'], {}),
+            raises(Exception).matching(HTTP_400),
+        )
+
+        self.edit(self.client, foobar['uuid'], self.new_body)
+        assert_that(
+            self.client.backends.get_source('google', foobar['uuid']),
+            has_entries(
+                uuid=foobar['uuid'],
+                tenant_uuid=foobar['tenant_uuid'],
+                name='new',
+            )
+        )
+
+    @fixtures.google_source(token=VALID_TOKEN_MAIN_TENANT)
+    @fixtures.google_source(token=VALID_TOKEN_SUB_TENANT)
+    def test_put_multi_tenant(self, sub, main):
+        main_client = self.get_client(VALID_TOKEN_MAIN_TENANT)
+        sub_client = self.get_client(VALID_TOKEN_SUB_TENANT)
+
+        assert_that(
+            calling(self.edit).with_args(sub_client, main['uuid'], sub),
+            not_(raises(Exception).matching(HTTP_409)),
+        )
+
+        assert_that(
+            calling(self.edit).with_args(sub_client, main['uuid'], self.new_body),
+            raises(Exception).matching(HTTP_404),
+        )
+
+        assert_that(
+            calling(self.edit).with_args(
+                main_client, main['uuid'], self.new_body, tenant_uuid=SUB_TENANT,
+            ),
+            raises(Exception).matching(HTTP_404),
+        )
+
+        assert_that(
+            calling(self.edit).with_args(main_client, sub['uuid'], self.new_body),
+            not_(raises(Exception)),
+        )
+
+    def edit(self, client, *args, **kwargs):
+        return client.backends.edit_source('google', *args, **kwargs)
+
+
 class TestDirdClientGooglePlugin(BaseGoogleTestCase):
 
     asset = 'dird_google'
@@ -323,22 +398,3 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
 
         source = self.client.backends.get_source(backend=self.BACKEND, source_uuid=created['uuid'])
         assert_that(source, equal_to(created))
-
-    def test_given_source_when_edit_then_ok(self):
-        source = self.client.backends.create_source(backend=self.BACKEND, body=self.config())
-        source.update({'name': 'a-new-name'})
-
-        assert_that(
-            calling(self.client.backends.edit_source).with_args(
-                backend=self.BACKEND,
-                source_uuid=source['uuid'],
-                body=source,
-            ),
-            not_(raises(requests.HTTPError))
-        )
-
-        updated = self.client.backends.get_source(backend=self.BACKEND, source_uuid=source['uuid'])
-        assert_that(updated, has_entries(
-            uuid=source['uuid'],
-            name='a-new-name',
-        ))
