@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 from contextlib import contextmanager
-import requests
 
 from hamcrest import (
     assert_that,
@@ -18,10 +17,7 @@ from mock import ANY
 from xivo_test_helpers.hamcrest.uuid_ import uuid_
 from xivo_test_helpers.hamcrest.raises import raises
 
-from .helpers.base_dird import (
-    BaseGoogleAssetTestCase,
-    BaseGoogleTestCase,
-)
+from .helpers.base_dird import BaseGoogleAssetTestCase
 from .helpers.constants import (
     UNKNOWN_UUID,
     VALID_TOKEN_MAIN_TENANT,
@@ -83,6 +79,39 @@ class TestDelete(BaseGoogleCRUDTestCase):
             calling(main_tenant_client.backends.delete_source).with_args('google', sub['uuid']),
             not_(raises(Exception)),
         )
+
+
+class TestGet(BaseGoogleCRUDTestCase):
+
+    @fixtures.google_source()
+    def test_get(self, source):
+        assert_that(self.get(self.client, source['uuid']), equal_to(source))
+
+        assert_that(
+            calling(self.get).with_args(self.client, UNKNOWN_UUID),
+            raises(Exception).matching(HTTP_404),
+        )
+
+    @fixtures.google_source(token=VALID_TOKEN_MAIN_TENANT)
+    @fixtures.google_source(token=VALID_TOKEN_SUB_TENANT)
+    def test_get_multi_tenant(self, sub, main):
+        main_client = self.get_client(VALID_TOKEN_MAIN_TENANT)
+        sub_client = self.get_client(VALID_TOKEN_SUB_TENANT)
+
+        assert_that(self.get(main_client, sub['uuid']), equal_to(sub))
+
+        assert_that(
+            calling(self.get).with_args(sub_client, main['uuid']),
+            raises(Exception).matching(HTTP_404),
+        )
+
+        assert_that(
+            calling(self.get).with_args(main_client, main['uuid'], tenant_uuid=SUB_TENANT),
+            raises(Exception).matching(HTTP_404),
+        )
+
+    def get(self, client, *args, **kwargs):
+        return client.backends.get_source('google', *args, **kwargs)
 
 
 class TestList(BaseGoogleCRUDTestCase):
@@ -350,51 +379,3 @@ class TestPut(BaseGoogleCRUDTestCase):
 
     def edit(self, client, *args, **kwargs):
         return client.backends.edit_source('google', *args, **kwargs)
-
-
-class TestDirdClientGooglePlugin(BaseGoogleTestCase):
-
-    asset = 'dird_google'
-    BACKEND = 'google'
-
-    def config(self):
-        return {
-            'auth': {
-                'host': 'auth-mock',
-                'port': 9497,
-                'verify_certificate': False,
-            },
-            'first_matched_columns': ['numbers'],
-            'format_columns': {
-                'reverse': "{name}",
-                'phone_mobile': "{numbers_by_label[mobile]}",
-                'phone': '{numbers[0]}',
-                'email': '{emails[0]}',
-            },
-            'name': 'google',
-            'searched_columns': [],
-            'type': 'google',
-        }
-
-    def setUp(self):
-        super().setUp()
-        self.client.backends.delete_source(backend=self.BACKEND, source_uuid=self.source['uuid'])
-
-    def tearDown(self):
-        try:
-            response = self.client.backends.list_sources(backend=self.BACKEND)
-            sources = response['items']
-            for source in sources:
-                self.client.backends.delete_source(backend=self.BACKEND, source_uuid=source['uuid'])
-        except requests.HTTPError:
-            pass
-
-        super().tearDown()
-
-    def test_given_source_when_get_then_ok(self):
-        config = self.config()
-
-        created = self.client.backends.create_source(backend=self.BACKEND, body=config)
-
-        source = self.client.backends.get_source(backend=self.BACKEND, source_uuid=created['uuid'])
-        assert_that(source, equal_to(created))
