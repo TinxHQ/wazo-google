@@ -9,8 +9,8 @@ from hamcrest import (
     calling,
     contains,
     empty,
+    equal_to,
     has_entries,
-    has_entry,
     has_item,
     has_properties,
     has_property,
@@ -139,7 +139,6 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
             not_(raises(requests.HTTPError))
         )
 
-    @pytest.mark.skip(reason='Not implemented')
     def test_given_source_when_delete_then_ok(self):
         source = self.client.backends.create_source(backend=self.BACKEND, body=self.config())
 
@@ -151,7 +150,6 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
             not_(raises(requests.HTTPError))
         )
 
-    @pytest.mark.skip(reason='Not implemented')
     def test_when_delete_then_raises(self):
         assert_that(
             calling(self.client.backends.delete_source).with_args(
@@ -163,21 +161,14 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
             )
         )
 
-    @pytest.mark.skip(reason='Not implemented')
     def test_given_source_when_get_then_ok(self):
         config = self.config()
 
         created = self.client.backends.create_source(backend=self.BACKEND, body=config)
 
         source = self.client.backends.get_source(backend=self.BACKEND, source_uuid=created['uuid'])
-        assert_that(source, has_entries(
-            uuid=created['uuid'],
-            auth=config['auth'],
-            format_columns=config['format_columns'],
-            first_matched_columns=config['first_matched_columns'],
-        ))
+        assert_that(source, equal_to(created))
 
-    @pytest.mark.skip(reason='Not implemented')
     def test_given_source_when_edit_then_ok(self):
         source = self.client.backends.create_source(backend=self.BACKEND, body=self.config())
         source.update({'name': 'a-new-name'})
@@ -191,21 +182,19 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
             not_(raises(requests.HTTPError))
         )
 
-    @pytest.mark.skip(reason='Not implemented')
+        updated = self.client.backends.get_source(backend=self.BACKEND, source_uuid=source['uuid'])
+        assert_that(updated, has_entries(
+            uuid=source['uuid'],
+            name='a-new-name',
+        ))
+
     def test_given_source_when_list_sources_then_ok(self):
         source = self.client.backends.create_source(backend=self.BACKEND, body=self.config())
 
         sources = self.client.backends.list_sources(backend=self.BACKEND)
-
-        assert_that(next(iter(sources['items'])), has_entry('uuid', source['uuid']))
-
-    @pytest.mark.skip(reason='Not implemented')
-    def test_given_source_when_list_then_ok(self):
-        self.client.backends.create_source(backend=self.BACKEND, body=self.config())
-
-        backends = self.client.backends.list()
-
-        assert_that(backends['items'], has_item({'name': self.BACKEND}))
+        assert_that(sources, has_entries(
+            items=contains(source),
+        ))
 
     @pytest.mark.skip(reason='Not implemented')
     def test_given_source_and_google_when_list_contacts_then_contacts_listed(self):
