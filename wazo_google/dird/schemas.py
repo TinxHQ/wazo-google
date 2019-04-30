@@ -15,10 +15,6 @@ class SourceSchema(BaseSourceSchema):
         keys=fields.String(validate=Length(min=1, max=64)),
         values=fields.String(validate=Length(min=1, max=64))
     )
-    endpoint = fields.String(
-        missing='https://graph.google.com/v1.0/me/contacts',
-        validate=Length(min=1, max=255),
-    )
 
 
 class ListSchema(_ListSchema):

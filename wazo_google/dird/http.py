@@ -34,7 +34,7 @@ class GoogleContactList(AuthResource):
         source = self.source_service.get(self.BACKEND, source_uuid, [tenant.uuid])
         google_token = get_google_access_token(user_uuid, token_from_request, **source['auth'])
 
-        contacts = self.google.get_contacts(google_token, source['endpoint'])
+        contacts = self.google.get_contacts(google_token)
 
         return {
             'filtered': len(contacts),

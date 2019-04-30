@@ -21,7 +21,6 @@ class TestGooglePlugin(TestCase):
             'auth': {
                 'host': '9497',
             },
-            'endpoint': 'www.bros.com',
             'name': 'google',
             'user_agent': 'luigi',
             'first_matched_columns': ['mobilePhone', 'businessPhones'],

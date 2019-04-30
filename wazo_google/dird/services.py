@@ -7,7 +7,7 @@ import requests
 
 from xivo_auth_client import Client as Auth
 
-from .exceptions import GoogleTokenNotFoundException, UnexpectedEndpointException
+from .exceptions import GoogleTokenNotFoundException
 
 
 logger = logging.getLogger(__name__)

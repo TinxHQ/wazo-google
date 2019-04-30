@@ -9,7 +9,6 @@ from hamcrest import (
     calling,
     contains,
     empty,
-    equal_to,
     has_entries,
     has_entry,
     has_item,
@@ -44,7 +43,6 @@ class TestGooglePlugin(BaseGooglePluginTestCase):
                 'port': self.service_port(9497, 'auth-mock'),
                 'verify_certificate': False,
             },
-            'endpoint': 'http://localhost:{}/me/contacts'.format(self.service_port(80, 'google-mock')),
             'first_matched_columns': ['businessPhones', 'mobilePhone'],
             'format_columns': {
                 'number': '{businessPhones[0]}',
@@ -93,40 +91,6 @@ class TestGooglePlugin(BaseGooglePluginTestCase):
         ))
 
 
-@pytest.mark.skip(reason='Not implemented')
-class TestGooglePluginWrongEndpoint(BaseGooglePluginTestCase):
-
-    asset = 'plugin_dird_google'
-
-    def config(self):
-        return {
-            'auth': {
-                'host': 'localhost',
-                'port': self.service_port(9497, 'auth-mock'),
-                'verify_certificate': False,
-            },
-            'endpoint': 'wrong-endpoint',
-            'first_matched_columns': [],
-            'format_columns': {
-                'display_name': "{firstname} {lastname}",
-                'name': "{firstname} {lastname}",
-                'reverse': "{firstname} {lastname}",
-                'phone_mobile': "{mobile}",
-            },
-            'name': 'google',
-            'searched_columns': [],
-            'type': 'google',
-        }
-
-    def test_plugin_lookup_with_wrong_endpoint(self):
-        self.auth_mock.set_external_auth(self.GOOGLE_EXTERNAL_AUTH)
-
-        result = self.backend.search('war', self.LOOKUP_ARGS)
-
-        assert_that(result, is_(empty()))
-
-
-@pytest.mark.skip(reason='Not implemented')
 class TestDirdClientGooglePlugin(BaseGoogleTestCase):
 
     asset = 'dird_google'
@@ -139,7 +103,6 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
                 'port': 9497,
                 'verify_certificate': False,
             },
-            'endpoint': 'http://google-mock:80/me/contacts',
             'first_matched_columns': ['mobilePhone'],
             'format_columns': {
                 'display_name': "{displayName}",
@@ -176,6 +139,7 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
             not_(raises(requests.HTTPError))
         )
 
+    @pytest.mark.skip(reason='Not implemented')
     def test_given_source_when_delete_then_ok(self):
         source = self.client.backends.create_source(backend=self.BACKEND, body=self.config())
 
@@ -187,6 +151,7 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
             not_(raises(requests.HTTPError))
         )
 
+    @pytest.mark.skip(reason='Not implemented')
     def test_when_delete_then_raises(self):
         assert_that(
             calling(self.client.backends.delete_source).with_args(
@@ -198,6 +163,7 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
             )
         )
 
+    @pytest.mark.skip(reason='Not implemented')
     def test_given_source_when_get_then_ok(self):
         config = self.config()
 
@@ -211,6 +177,7 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
             first_matched_columns=config['first_matched_columns'],
         ))
 
+    @pytest.mark.skip(reason='Not implemented')
     def test_given_source_when_edit_then_ok(self):
         source = self.client.backends.create_source(backend=self.BACKEND, body=self.config())
         source.update({'name': 'a-new-name'})
@@ -224,6 +191,7 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
             not_(raises(requests.HTTPError))
         )
 
+    @pytest.mark.skip(reason='Not implemented')
     def test_given_source_when_list_sources_then_ok(self):
         source = self.client.backends.create_source(backend=self.BACKEND, body=self.config())
 
@@ -231,6 +199,7 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
 
         assert_that(next(iter(sources['items'])), has_entry('uuid', source['uuid']))
 
+    @pytest.mark.skip(reason='Not implemented')
     def test_given_source_when_list_then_ok(self):
         self.client.backends.create_source(backend=self.BACKEND, body=self.config())
 
@@ -238,6 +207,7 @@ class TestDirdClientGooglePlugin(BaseGoogleTestCase):
 
         assert_that(backends['items'], has_item({'name': self.BACKEND}))
 
+    @pytest.mark.skip(reason='Not implemented')
     def test_given_source_and_google_when_list_contacts_then_contacts_listed(self):
         source = self.client.backends.create_source(backend=self.BACKEND, body=self.config())
         auth_client_mock = AuthMock(host='0.0.0.0', port=self.service_port(9497, 'auth-mock'))
@@ -273,7 +243,6 @@ class TestDirdGooglePlugin(BaseGoogleTestCase):
                 'port': 9497,
                 'verify_certificate': False,
             },
-            'endpoint': 'http://google-mock:80/me/contacts',
             'first_matched_columns': [],
             'format_columns': {
                 'firstname': "{givenName}",
@@ -354,91 +323,5 @@ class TestDirdGooglePlugin(BaseGoogleTestCase):
             ),
             raises(requests.HTTPError).matching(
                 has_property('response', has_properties('status_code', 404))
-            )
-        )
-
-
-@pytest.mark.skip(reason='Not implemented')
-class TestDirdGooglePluginNoEndpoint(BaseGoogleTestCase):
-
-    asset = 'dird_google'
-
-    BACKEND = 'google'
-
-    def config(self):
-        return {
-            'auth': {
-                'host': 'auth-mock',
-                'port': 9497,
-                'verify_certificate': False,
-            },
-            'first_matched_columns': [],
-            'format_columns': {
-                'firstname': "{givenName}",
-                'lastname': "{surname}",
-                'reverse': "{displayName}",
-                'phone_mobile': "{mobilePhone}",
-            },
-            'name': 'google',
-            'searched_columns': [
-                "givenName",
-                "surname",
-                "businessPhones"
-            ],
-            'type': 'google',
-        }
-
-    def test_given_google_when_lookup_with_no_endpoint_then_no_error(self):
-        assert_that(self.source['endpoint'], is_(equal_to('https://people.googleapis.com/$discovery/rest')))
-        assert_that(
-            calling(self.client.directories.lookup).with_args(term='war', profile='default'),
-            not_(raises(Exception))
-        )
-
-
-@pytest.mark.skip(reason='Not implemented')
-class TestDirdGooglePluginErrorEndpoint(BaseGoogleTestCase):
-
-    asset = 'dird_google'
-
-    BACKEND = 'google'
-
-    def config(self):
-        return {
-            'auth': {
-                'host': 'auth-mock',
-                'port': 9497,
-                'verify_certificate': False,
-            },
-            'endpoint': 'http://google-mock:80/me/contacts/error',
-            'first_matched_columns': [],
-            'format_columns': {
-                'display_name': "{firstname} {lastname}",
-                'name': "{firstname} {lastname}",
-                'reverse': "{firstname} {lastname}",
-                'phone_mobile': "{mobile}",
-            },
-            'name': 'google',
-            'searched_columns': [],
-            'type': 'google',
-        }
-
-    def test_given_google_when_lookup_with_error_endpoint_then_no_error(self):
-        assert_that(
-            calling(self.client.directories.lookup).with_args(
-                term='war',
-                profile='default',
-            ),
-            not_(raises(Exception))
-        )
-
-    def test_given_google_when_fetch_all_contacts_with_error_endpoint(self):
-        assert_that(
-            calling(self.client.backends.list_contacts_from_source).with_args(
-                backend=self.BACKEND,
-                source_uuid=self.source['uuid']
-            ),
-            raises(requests.HTTPError).matching(
-                has_property('response', has_properties('status_code', 503))
             )
         )

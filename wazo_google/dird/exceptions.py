@@ -4,16 +4,6 @@
 from xivo.rest_api_helpers import APIException
 
 
-class UnexpectedEndpointException(APIException):
-
-    code = 503
-
-    def __init__(self, **kwargs):
-        message = 'Unexpected endpoint error.'
-        details = kwargs
-        super().__init__(self.code, message, 'unexpected-endpoint-error', details)
-
-
 class GoogleTokenNotFoundException(APIException):
 
     code = 404

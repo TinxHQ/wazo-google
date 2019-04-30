@@ -157,11 +157,6 @@ definitions:
       - properties:
           auth:
             $ref: '#/definitions/WazoAuthConfig'
-          endpoint:
-            description: Endpoint where to get the information from
-            example: "https://graph.google.com/v1.0/me/contacts"
-            default: "https://graph.google.com/v1.0/me/contacts"
-            type: string
       - required:
         - name
         - auth
