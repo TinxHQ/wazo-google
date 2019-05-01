@@ -10,7 +10,6 @@ from hamcrest import (
     contains,
     empty,
     has_entries,
-    has_item,
     has_properties,
     has_property,
     is_,
@@ -88,59 +87,6 @@ class TestGooglePlugin(BaseGooglePluginTestCase):
             number='5555555555',
             email='wbros@wazoquebec.ongoogle.com',
             **self.WARIO
-        ))
-
-
-class TestDirdClientGooglePlugin(BaseGoogleTestCase):
-
-    asset = 'dird_google'
-    BACKEND = 'google'
-
-    def config(self):
-        return {
-            'auth': {
-                'host': 'auth-mock',
-                'port': 9497,
-                'verify_certificate': False,
-            },
-            'first_matched_columns': ['mobilePhone'],
-            'format_columns': {
-                'display_name': "{displayName}",
-                'name': "{displayName}",
-                'reverse': "{displayName}",
-                'phone_mobile': "{mobilePhone}",
-            },
-            'name': 'google',
-            'searched_columns': [],
-            'type': 'google',
-        }
-
-    def setUp(self):
-        super().setUp()
-        self.client.backends.delete_source(backend=self.BACKEND, source_uuid=self.source['uuid'])
-
-    def tearDown(self):
-        try:
-            response = self.client.backends.list_sources(backend=self.BACKEND)
-            sources = response['items']
-            for source in sources:
-                self.client.backends.delete_source(backend=self.BACKEND, source_uuid=source['uuid'])
-        except requests.HTTPError:
-            pass
-
-        super().tearDown()
-
-    @pytest.mark.skip(reason='Not implemented')
-    def test_given_source_and_google_when_list_contacts_then_contacts_listed(self):
-        source = self.client.backends.create_source(backend=self.BACKEND, body=self.config())
-        auth_client_mock = AuthMock(host='0.0.0.0', port=self.service_port(9497, 'auth-mock'))
-        auth_client_mock.set_external_auth(self.GOOGLE_EXTERNAL_AUTH)
-
-        result = self.client.backends.list_contacts_from_source(backend=self.BACKEND, source_uuid=source['uuid'])
-        assert_that(result, has_entries(
-            items=has_item(
-                has_entries(name='Wario'),
-            ),
         ))
 
 

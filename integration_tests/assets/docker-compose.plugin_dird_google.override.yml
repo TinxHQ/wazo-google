@@ -3,9 +3,9 @@ services:
   sync:
     depends_on:
       - auth-mock
-      - google-mock
+      - google.com
       - postgres-auth
       - postgres-dird
       - rabbitmq
     environment:
-      TARGETS: "auth-mock:9497 google-mock:80 postgres-auth:5432 postgres-dird:5432 rabbitmq:5672"
+      TARGETS: "auth-mock:9497 google.com:443 postgres-auth:5432 postgres-dird:5432 rabbitmq:5672"

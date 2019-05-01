@@ -10,7 +10,6 @@ from hamcrest import (
     contains_inanyorder,
     equal_to,
     has_entries,
-    has_properties,
     not_,
 )
 from mock import ANY
@@ -19,6 +18,10 @@ from xivo_test_helpers.hamcrest.raises import raises
 
 from .helpers.base_dird import BaseGoogleAssetTestCase
 from .helpers.constants import (
+    HTTP_400,
+    HTTP_401,
+    HTTP_404,
+    HTTP_409,
     UNKNOWN_UUID,
     VALID_TOKEN_MAIN_TENANT,
     VALID_TOKEN_SUB_TENANT,
@@ -26,11 +29,6 @@ from .helpers.constants import (
     SUB_TENANT,
 )
 from .helpers.fixtures import http as fixtures
-
-HTTP_400 = has_properties(response=has_properties(status_code=400))
-HTTP_401 = has_properties(response=has_properties(status_code=401))
-HTTP_404 = has_properties(response=has_properties(status_code=404))
-HTTP_409 = has_properties(response=has_properties(status_code=409))
 
 
 class BaseGoogleCRUDTestCase(BaseGoogleAssetTestCase):

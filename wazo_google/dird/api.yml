@@ -16,10 +16,10 @@ paths:
       responses:
         '200':
           description: |
-            Contacts as fetched from google api.
+            Contacts as fetched from Google API and transformed to match the dird internals
 
-            To know more about google contacts properties, see
-            https://docs.google.com/en-us/graph/api/resources/contact?view=graph-rest-1.0#properties
+            Note that the total in the result is always the total matching for the current query.
+            Which is the same as the filtered value, this is a limitation of the Google API.
           schema:
             $ref: '#/definitions/GoogleContactList'
         '401':
@@ -189,7 +189,7 @@ definitions:
         readOnly: true
       total:
         type: integer
-        description: The number of contacts
+        description: The number of contacts matching the searched terms
         readOnly: true
       filtered:
         type: integer

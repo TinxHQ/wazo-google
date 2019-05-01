@@ -52,6 +52,12 @@ class BaseGoogleAssetTestCase(AssetLaunchingTestCase):
     assets_root = ASSET_ROOT
     service = 'dird'
 
+    GOOGLE_EXTERNAL_AUTH = {
+        "access_token": "an-access-token",
+        "scope": "a-scope",
+        "token_expiration": 42
+    }
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -67,12 +73,6 @@ class BaseGoogleAssetTestCase(AssetLaunchingTestCase):
 
 
 class BaseGoogleTestCase(BaseGoogleAssetTestCase):
-
-    GOOGLE_EXTERNAL_AUTH = {
-        "access_token": "an-access-token",
-        "scope": "a-scope",
-        "token_expiration": 42
-    }
 
     LOOKUP_ARGS = {
         'xivo_user_uuid': 'a-xivo-uuid',

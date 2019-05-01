@@ -3,6 +3,8 @@
 
 import logging
 
+from operator import itemgetter
+
 import requests
 
 from xivo_auth_client import Client as Auth
@@ -25,26 +27,51 @@ class GoogleService:
         for contact in self._fetch(google_token, term=term):
             yield contact
 
-    def get_contacts(self, google_token):
-        for contact in self._fetch(google_token):
-            yield contact
+    def get_contacts(self, google_token, **list_params):
+        contacts = list(self._fetch(google_token))
+        total = len(contacts)
+        sorted_contacts = self._sort(contacts, **list_params)
+        paginated_contacts = self._paginate(sorted_contacts, **list_params)
+        return paginated_contacts, total
 
     def _fetch(self, google_token, term=None):
         headers = self.headers(google_token)
         query_params = {
             'alt': 'json',
-            'max-results': 10000,
+            'max-results': 1000,
         }
         if term:
             query_params['q'] = term
 
-        response = requests.get(self.url, headers=headers, params=query_params)
+        # TODO find a way to remove this verify = False
+        response = requests.get(self.url, headers=headers, params=query_params, verify=False)
         if response.status_code != 200:
             return []
 
         logger.debug('Sucessfully fetched contacts from google')
         for contact in response.json().get('feed', {}).get('entry', []):
             yield self.formatter.format(contact)
+
+    def _paginate(self, contacts, limit=None, offset=None, **_):
+        if limit is None and offset is None:
+            return contacts
+
+        if offset:
+            end = contacts[offset:]
+        else:
+            end = contacts
+
+        if limit is None:
+            return end
+
+        return end[:limit]
+
+    def _sort(self, contacts, order=None, direction=None, **_):
+        if not order:
+            return contacts
+
+        reverse = direction == 'desc'
+        return sorted(contacts, key=itemgetter(order), reverse=reverse)
 
     def headers(self, google_token):
         return {
