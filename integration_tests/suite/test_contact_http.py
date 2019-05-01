@@ -168,5 +168,21 @@ class TestGoogleContactList(BaseGoogleAssetTestCase):
             has_entries(items=contains(mario)),
         )
 
+    @fixtures.google_result(GOOGLE_CONTACT_LIST)
+    def test_search(self, google_api):
+        self.list_(self.client, self.source_uuid, search='mario'),
+        google_api.verify(
+            {
+                'method': 'GET',
+                'path': '/m8/feeds/contacts/default/full',
+                'headers': {
+                    'Authorization': ['Bearer an-access-token'],
+                },
+                'queryStringParameters': {
+                    'q': ['mario'],
+                },
+            }
+        )
+
     def list_(self, client, *args, **kwargs):
         return client.backends.list_contacts_from_source('google', *args, **kwargs)

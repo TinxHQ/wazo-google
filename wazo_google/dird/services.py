@@ -28,7 +28,7 @@ class GoogleService:
             yield contact
 
     def get_contacts(self, google_token, **list_params):
-        contacts = list(self._fetch(google_token))
+        contacts = list(self._fetch(google_token, term=list_params.get('search')))
         total = len(contacts)
         sorted_contacts = self._sort(contacts, **list_params)
         paginated_contacts = self._paginate(sorted_contacts, **list_params)
