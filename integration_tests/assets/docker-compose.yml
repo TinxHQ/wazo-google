@@ -29,16 +29,17 @@ services:
     ports:
     - "9489"
     volumes:
-    - "./etc/wazo-dird/conf.d/google.yml:/etc/wazo-dird/conf.d/google.yml"
-    - "./etc/wazo-dird/conf.d/default.yml:/etc/wazo-dird/conf.d/default.yml"
-    # - "${LOCAL_GIT_REPOS}/wazo-dird/wazo_dird:/usr/local/lib/python3.5/site-packages/wazo_dird"
+      - "../..:/usr/src/wazo-google"
+      - "./etc/wazo-dird/conf.d/google.yml:/etc/wazo-dird/conf.d/google.yml"
+      - "./etc/wazo-dird/conf.d/default.yml:/etc/wazo-dird/conf.d/default.yml"
+      # - "${LOCAL_GIT_REPOS}/wazo-dird/wazo_dird:/usr/local/lib/python3.5/site-packages/wazo_dird"
 
-  google-mock:
-    environment:
-      FLASK_ENV: development
-    image: google-mock
+  google.com:
+    image: jamesdbloom/mockserver:mockserver-5.2.3
     ports:
-      - "80"
+      - "443"
+    command:
+      "/opt/mockserver/run_mockserver.sh -serverPort 443"
 
   oauth2sync:
     image: oauth2-synchronization-service

@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import logging
-from operator import itemgetter
 
 from wazo_dird import BaseSourcePlugin, make_result_class
 
@@ -18,17 +17,16 @@ class GooglePlugin(BaseSourcePlugin):
         config = dependencies['config']
         self.auth = config['auth']
         self.name = config['name']
-        self.endpoint = config['endpoint']
         self.google = services.GoogleService()
-
         self.unique_column = 'id'
+
         format_columns = dependencies['config'].get(self.FORMAT_COLUMNS, {})
         if 'reverse' not in format_columns:
             logger.info(
-                'no "reverse" column has been configured on %s will use "givenName"',
+                'no "reverse" column has been configured on %s will use "name"',
                 self.name
             )
-            format_columns['reverse'] = '{givenName}'
+            format_columns['reverse'] = '{name}'
 
         self._SourceResult = make_result_class(
             'google',
@@ -58,22 +56,11 @@ class GooglePlugin(BaseSourcePlugin):
         except GoogleTokenNotFoundException:
             return []
 
-        contacts = self.google.get_contacts_with_term(google_token, term, self.endpoint)
-        updated_contacts = self._update_contact_fields(contacts)
-
+        contacts = self.google.get_contacts_with_term(google_token, term)
         lowered_term = term.lower()
+        filtered_contacts = [c for c in contacts if self._search_match_predicate(c, lowered_term)]
 
-        def match_fn(contact):
-            for column in self._searched_columns:
-                column_value = contact.get(column) or ''
-                if lowered_term in str(column_value).lower():
-                    return True
-            return False
-
-        filtered_contacts = [c for c in updated_contacts if match_fn(c)]
-        sorted_contacts = sorted(filtered_contacts, key=itemgetter('givenName'))
-
-        return [self._SourceResult(c) for c in sorted_contacts]
+        return [self._SourceResult(c) for c in filtered_contacts]
 
     def list(self, unique_ids, args=None):
         try:
@@ -81,9 +68,8 @@ class GooglePlugin(BaseSourcePlugin):
         except GoogleTokenNotFoundException:
             return []
 
-        contacts = self.google.get_contacts(google_token, self.endpoint)
-        updated_contacts = self._update_contact_fields(contacts)
-        filtered_contacts = [c for c in updated_contacts if c[self.unique_column] in unique_ids]
+        contacts, _ = self.google.get_contacts(google_token)
+        filtered_contacts = [c for c in contacts if c[self.unique_column] in unique_ids]
 
         return [self._SourceResult(contact) for contact in filtered_contacts]
 
@@ -101,24 +87,22 @@ class GooglePlugin(BaseSourcePlugin):
             logger.debug('could not find a matching google token, aborting first_match')
             return None
 
-        contacts = self.google.get_contacts(google_token, self.endpoint)
-        updated_contacts = self._update_contact_fields(contacts)
+        contacts, _ = self.google.get_contacts(google_token)
         lowered_term = term.lower()
 
-        for contact in updated_contacts:
+        for contact in contacts:
             if self._first_match_predicate(lowered_term, contact):
                 return self._SourceResult(contact)
 
     def _first_match_predicate(self, term, contact):
         for column in self._first_matched_columns:
             column_value = contact.get(column) or ''
-
-            if not isinstance(column_value, list):
+            if not isinstance(column_value, (dict, list)):
                 if term == str(column_value).lower():
                     return True
             else:
-                for item in column_value:
-                    if term == item.lower():
+                for value in column_value:
+                    if term == value.lower():
                         return True
         return False
 
@@ -129,9 +113,14 @@ class GooglePlugin(BaseSourcePlugin):
 
         return services.get_google_access_token(xivo_user_uuid, token, **self.auth)
 
-    @staticmethod
-    def _update_contact_fields(contacts):
-        for contact in contacts:
-            contact.setdefault('givenName', '')
-            contact['email'] = services.get_first_email(contact)
-        return contacts
+    def _search_match_predicate(self, contact, term):
+        for field in self._searched_columns:
+            column_value = contact.get(field) or ''
+            if not isinstance(column_value, (dict, list)):
+                if term in column_value.lower():
+                    return True
+            else:
+                for value in column_value:
+                    if term in value.lower():
+                        return True
+        return False

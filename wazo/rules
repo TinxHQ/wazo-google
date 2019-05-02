@@ -14,13 +14,13 @@ case "$1" in
 
     install)
         systemctl restart wazo-auth
-        # systemctl restart wazo-dird
+        systemctl restart wazo-dird
     ;;
 
     uninstall)
         rm -f /etc/wazo-auth/conf.d/google.yml
         systemctl restart wazo-auth || true
-        # systemctl restart wazo-dird || true
+        systemctl restart wazo-dird || true
     ;;
 
     postrm)

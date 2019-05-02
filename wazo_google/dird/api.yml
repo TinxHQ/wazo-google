@@ -16,10 +16,10 @@ paths:
       responses:
         '200':
           description: |
-            Contacts as fetched from google api.
+            Contacts as fetched from Google API and transformed to match the dird internals
 
-            To know more about google contacts properties, see
-            https://docs.google.com/en-us/graph/api/resources/contact?view=graph-rest-1.0#properties
+            Note that the total in the result is always the total matching for the current query.
+            Which is the same as the filtered value, this is a limitation of the Google API.
           schema:
             $ref: '#/definitions/GoogleContactList'
         '401':
@@ -42,6 +42,7 @@ paths:
       description: '**Required ACL:** `dird.backends.google.sources.read`'
       tags:
         - configuration
+        - google
       parameters:
         - $ref: '#/parameters/tenantuuid'
         - $ref: '#/parameters/recurse'
@@ -57,9 +58,19 @@ paths:
     post:
       operationId: create_google_source
       summary: Configure a source for the google backend
-      description: '**Required ACL:** `dird.backends.google.sources.create`'
+      description: |
+        **Required ACL:** `dird.backends.google.sources.create`
+
+        This resource configures a Google source for wazo-dird. Columns that are available from this source
+        are:
+
+        * name: the contact name
+        * numbers: a list of phone numbers
+        * numbers_by_label: a map of type to numbers {'mobile': <number>, 'home': <number>}
+        * emails: a list of email addresses
       tags:
         - configuration
+        - google
       parameters:
         - $ref: '#/parameters/tenantuuid'
         - in: body
@@ -75,15 +86,23 @@ paths:
             $ref: '#/definitions/GoogleSource'
           examples:
             application/json:
+              auth:
+                host: localhost
+                port: 9497
+                verify_certificate: /usr/share/xivo-certs/server.crt
+                version: 0.1
               format_columns:
-                name: "{givenName} {surname}"
-                phone_mobile: "{mobilePhone}"
-                number: "{businessPhones[0]}"
-                reverse: "{givenName} {surname}"
-                email: "{email}"
+                phone: "{numbers[0]}"
+                phone_mobile: "{numbers_by_label[mobile]}"
+                reverse: "{name}"
+                email: "{emails[0]}"
               name: google
-              searched_columns: ["displayName", "mobilePhone"]
-              first_matched_columns: ["businessPhones", "mobilePhone"]
+              first_matched_columns:
+                - numbers
+              searched_columns:
+                - numbers
+                - emails
+                - name
         '400':
           $ref: '#/responses/CreateError'
         '409':
@@ -97,6 +116,7 @@ paths:
       description: '**Required ACL:** `dird.backends.google.sources.{source_uuid}.read`'
       tags:
         - configuration
+        - google
       parameters:
         - $ref: '#/parameters/tenantuuid'
         - $ref: '#/parameters/sourceuuid'
@@ -113,6 +133,7 @@ paths:
       description: '**Required ACL:** `dird.backends.google.sources.{source_uuid}.update`'
       tags:
         - configuration
+        - google
       parameters:
         - $ref: '#/parameters/tenantuuid'
         - $ref: '#/parameters/sourceuuid'
@@ -139,6 +160,7 @@ paths:
       description: '**Required ACL:** `dird.backends.google.sources.{source_uuid}.delete`'
       tags:
         - configuration
+        - google
       parameters:
         - $ref: '#/parameters/tenantuuid'
         - $ref: '#/parameters/sourceuuid'
@@ -154,41 +176,10 @@ definitions:
       - $ref: '#/definitions/Source'
       - properties:
           auth:
-            $ref: '#/definitions/WazoAuthConfig'
-          confd:
-            $ref: '#/definitions/ConfdConfig'
-          endpoint:
-            description: Endpoint where to get the information from
-            example: "https://graph.google.com/v1.0/me/contacts"
-            default: "https://graph.google.com/v1.0/me/contacts"
-            type: string
+            $ref: '#/definitions/WazoAuthConfigNoAuth'
       - required:
         - name
         - auth
-        - confd
-  GoogleSourcePostFormatColumns:
-    title: format_columns
-    properties:
-      name:
-        example: "{firstname} {lastname}"
-        type: string
-      display_name:
-        example: "{firstname} {lastname}"
-        type: string
-      phone:
-        example: "{phone}"
-        type: string
-      phone_mobile:
-        example: "{mobile}"
-        type: string
-      reverse:
-        example: "{firstname} {lastname}"
-        type: string
-    required:
-      - name
-      - display_name
-      - phone_mobile
-      - reverse
   GoogleContactList:
     properties:
       items:
@@ -198,7 +189,7 @@ definitions:
         readOnly: true
       total:
         type: integer
-        description: The number of contacts
+        description: The number of contacts matching the searched terms
         readOnly: true
       filtered:
         type: integer
@@ -218,34 +209,3 @@ definitions:
         - items
         - total
         - filtered
-  WazoAuthConfig:
-    title: Auth
-    allOf:
-      - $ref: '#/definitions/ExternalServiceConfig'
-      - properties:
-          port:
-            type: integer
-            default: 9497
-          key_file:
-            type: string
-            description: The path the the file containing the credentials
-          username:
-            type: string
-            description: The username to use when not using a key_file
-          password:
-            type: string
-            description: The password to use when not using a key_file
-          version:
-            type: string
-            default: "0.1"
-  ExternalServiceConfig:
-    properties:
-      host:
-        type: string
-        default: localhost
-      verify_certificate:
-        type: string
-        description: If the HTTPs certificates should be verified and the path of the certificate if a custom certificate is used.
-        default: true
-      timeout:
-        type: number

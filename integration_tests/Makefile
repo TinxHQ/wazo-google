@@ -1,8 +1,9 @@
-.PHONY: build-oauth2-sync test-setup test test-image test-prerequisite test-db
+.PHONY: test-setup test images mocks pull-images
 
-test-setup: test-prerequisite build-mocks test-images egg-info
+test-setup: pull-images mocks images egg-info
 
-test-prerequisite:
+pull-images:
+	docker pull jamesdbloom/mockserver:mockserver-5.2.3
 	docker pull p0bailey/docker-flask
 	docker pull rabbitmq
 	docker pull swaggerapi/swagger-validator
@@ -13,11 +14,10 @@ test-prerequisite:
 	docker pull wazopbx/wazo-dird
 	docker pull wazopbx/wazo-dird-db
 
-build-mocks:
+mocks:
 	docker build --no-cache -t oauth2-synchronization-service -f assets/external_auth/oauth2_synchronization_service/Dockerfile assets/external_auth/oauth2_synchronization_service
-	docker build --no-cache -t google-mock -f assets/external_auth/google-mock/Dockerfile assets/external_auth/google-mock
 
-test-images:
+images:
 	docker build --no-cache -t wazo-auth-google-test -f Dockerfile-auth-google-test ..
 	docker build --no-cache -t wazo-dird-google-test -f Dockerfile-dird-google-test ..
 
