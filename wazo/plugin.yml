@@ -4,6 +4,7 @@ debian_depends:
   - python3-requests
   - python3-requests-oauthlib
   - wazo-auth
+  - wazo-dird
   - xivo-auth-client-python3
   - xivo-lib-python-python3
 description: Add google as an external authentication
@@ -13,6 +14,7 @@ author: Wazo Team
 name: wazo-google
 namespace: official
 plugin_format_version: 1
-version: 1.0.0-1
+version: 1.2.0-1
 tags:
   - authentication
+min_wazo_version: 19.07
