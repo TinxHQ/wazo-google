@@ -3,7 +3,6 @@
 
 import os
 import logging
-import requests
 
 from stevedore import DriverManager
 from mock import Mock
@@ -47,16 +46,20 @@ class BackendWrapper:
         return [r.fields for r in results]
 
 
-class BaseGoogleAssetTestCase(AssetLaunchingTestCase):
+class BaseAssetLaunchingTestCase(AssetLaunchingTestCase):
 
     assets_root = ASSET_ROOT
-    service = 'dird'
 
     GOOGLE_EXTERNAL_AUTH = {
         "access_token": "an-access-token",
         "scope": "a-scope",
         "token_expiration": 42
     }
+
+
+class BaseGoogleAssetTestCase(BaseAssetLaunchingTestCase):
+
+    service = 'dird'
 
     @classmethod
     def setUpClass(cls):
@@ -68,11 +71,14 @@ class BaseGoogleAssetTestCase(AssetLaunchingTestCase):
     def client(self):
         return self.get_client()
 
-    def get_client(self, token=VALID_TOKEN_MAIN_TENANT):
-        return DirdClient(self.host, self.port, token=token, verify_certificate=False)
+    @classmethod
+    def get_client(cls, token=VALID_TOKEN_MAIN_TENANT):
+        return DirdClient(cls.host, cls.port, token=token, verify_certificate=False)
 
 
-class BaseGoogleTestCase(BaseGoogleAssetTestCase):
+class BaseGooglePluginTestCase(BaseAssetLaunchingTestCase):
+
+    service = 'google.com'
 
     LOOKUP_ARGS = {
         'xivo_user_uuid': 'a-xivo-uuid',
@@ -90,45 +96,8 @@ class BaseGoogleTestCase(BaseGoogleAssetTestCase):
 
     def setUp(self):
         super().setUp()
-        self.source = self.client.backends.create_source(
-            backend=self.BACKEND,
-            body=self.config(),
-        )
-        self.display = self.client.displays.create({
-            'name': 'display',
-            'columns': [
-                {'field': 'firstname'},
-            ],
-        })
-        self.profile = self.client.profiles.create({
-            'name': 'default',
-            'display': self.display,
-            'services': {'lookup': {'sources': [self.source]}},
-        })
         self.auth_client_mock = AuthMock(host='0.0.0.0', port=self.service_port(9497, 'auth-mock'))
         self.auth_client_mock.set_external_auth(self.GOOGLE_EXTERNAL_AUTH)
-
-    def tearDown(self):
-        try:
-            self.client.profiles.delete(self.profile['uuid'])
-            self.client.displays.delete(self.display['uuid'])
-            self.client.backends.delete_source(
-                backend=self.BACKEND,
-                source_uuid=self.source['uuid'],
-            )
-        except requests.HTTPError:
-            pass
-
-        self.auth_client_mock.reset_external_auth()
-        super().tearDown()
-
-
-class BaseGooglePluginTestCase(BaseGoogleTestCase):
-
-    asset = 'plugin_dird_google'
-
-    def setUp(self):
-        self.auth_mock = AuthMock(host='0.0.0.0', port=self.service_port(9497, 'auth-mock'))
         self.backend = BackendWrapper(
             'google',
             {
@@ -139,4 +108,5 @@ class BaseGooglePluginTestCase(BaseGoogleTestCase):
 
     def tearDown(self):
         self.backend.unload()
-        self.auth_mock.reset_external_auth()
+        self.auth_client_mock.reset_external_auth()
+        super().tearDown()

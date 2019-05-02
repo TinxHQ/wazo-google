@@ -1,43 +1,36 @@
 # Copyright 2019 The Wazo Authors  (see the AUTHORS file)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import pytest
 import requests
 
 from hamcrest import (
     assert_that,
-    calling,
     contains,
-    empty,
     has_entries,
-    has_properties,
-    has_property,
-    is_,
+    has_item,
 )
-from xivo_test_helpers.auth import AuthClient as AuthMock
-from xivo_test_helpers.hamcrest.raises import raises
 
-from .helpers.base_dird import (
-    BaseGooglePluginTestCase,
-    BaseGoogleTestCase,
-)
+from xivo_test_helpers.auth import AuthClient as AuthMock
+
+from .helpers.base_dird import BaseGoogleAssetTestCase
+from .helpers.constants import GOOGLE_CONTACT_LIST
+from .helpers.fixtures import http as fixtures
 
 requests.packages.urllib3.disable_warnings()
-VALID_TOKEN_MAIN_TENANT = 'valid-token-master-tenant'
-MAIN_TENANT = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeee10'
-SUB_TENANT = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeee11'
 
 
-@pytest.mark.skip(reason='Not implemented')
-class TestGooglePlugin(BaseGooglePluginTestCase):
+class TestGooglePlugin(BaseGoogleAssetTestCase):
 
-    asset = 'plugin_dird_google'
+    asset = 'dird_google'
 
-    def config(self):
-        return {
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        client = cls.get_client()
+        source_body = {
             'auth': {
-                'host': 'localhost',
-                'port': self.service_port(9497, 'auth-mock'),
+                'host': 'auth-mock',
+                'port': 9497,
                 'verify_certificate': False,
             },
             'first_matched_columns': ['numbers'],
@@ -53,142 +46,87 @@ class TestGooglePlugin(BaseGooglePluginTestCase):
                 "emails",
                 "numbers",
             ],
-            'type': 'google',
         }
-
-    def test_plugin_lookup(self):
-        self.auth_mock.set_external_auth(self.GOOGLE_EXTERNAL_AUTH)
-
-        result = self.backend.search('war', self.LOOKUP_ARGS)
-
-        assert_that(result, contains(has_entries(
-            number='5555555555',
-            email='wbros@wazoquebec.ongoogle.com',
-            **self.WARIO
-        )))
-
-    def test_plugin_favorites(self):
-        self.auth_mock.set_external_auth(self.GOOGLE_EXTERNAL_AUTH)
-
-        result = self.backend.list(['an-id'], self.FAVORITE_ARGS)
-
-        assert_that(result, contains(has_entries(
-            number='5555555555',
-            email='wbros@wazoquebec.ongoogle.com',
-            **self.WARIO
-        )))
-
-    def test_plugin_reverse(self):
-        self.auth_mock.set_external_auth(self.GOOGLE_EXTERNAL_AUTH)
-
-        result = self.backend.first('5555555555', self.LOOKUP_ARGS)
-
-        assert_that(result, has_entries(
-            number='5555555555',
-            email='wbros@wazoquebec.ongoogle.com',
-            **self.WARIO
-        ))
-
-
-@pytest.mark.skip(reason='Not implemented')
-class TestDirdGooglePlugin(BaseGoogleTestCase):
-
-    asset = 'dird_google'
-
-    BACKEND = 'google'
-    display_body = {
-        'name': 'default',
-        'columns': [
-            {'title': 'Firstname', 'field': 'firstname'},
-            {'title': 'Lastname', 'field': 'lastname'},
-            {'title': 'Number', 'field': 'number'},
-        ],
-    }
-
-    def config(self):
-        return {
-            'auth': {
-                'host': 'auth-mock',
-                'port': 9497,
-                'verify_certificate': False,
-            },
-            'first_matched_columns': [],
-            'format_columns': {
-                'phone': "{numbers[0]}",
-                'phone_mobile': "{numbers_by_label[mobile]}",
-                'reverse': '{name}',
-            },
-            'name': 'google',
-            'searched_columns': [
-                'name',
-                "emails",
-                "numbers",
+        display_body = {
+            'name': 'default',
+            'columns': [
+                {'title': 'name', 'field': 'name'},
+                {'title': 'email', 'field': 'email'},
+                {'title': 'number', 'field': 'phone'},
+                {'title': 'mobile', 'field': 'phone_mobile'},
             ],
-            'type': 'google',
         }
+        display = client.displays.create(display_body)
+        source = client.backends.create_source('google', source_body)
 
-    def setUp(self):
-        super().setUp()
-        self.auth_client_mock = AuthMock(host='0.0.0.0', port=self.service_port(9497, 'auth-mock'))
+        profile_body = {
+            'name': 'default',
+            'display': display,
+            'services': {
+                'lookup': {'sources': [source]},
+                'reverse': {'sources': [source]},
+                'favorites': {'sources': [source]},
+            },
+        }
+        profile = client.profiles.create(profile_body)
 
-    def test_given_google_when_lookup_then_contacts_fetched(self):
-        self.auth_client_mock.set_external_auth(self.GOOGLE_EXTERNAL_AUTH)
+        cls.source_uuid = source['uuid']
+        cls.display_uuid = display['uuid']
+        cls.profile_uuid = profile['uuid']
 
-        result = self.client.directories.lookup(term='war', profile='default')
+        cls.auth_client_mock = AuthMock(host='0.0.0.0', port=cls.service_port(9497, 'auth-mock'))
+        cls.auth_client_mock.set_external_auth(cls.GOOGLE_EXTERNAL_AUTH)
+
+    @classmethod
+    def tearDownClass(cls):
+        client = cls.get_client()
+        cls.auth_client_mock.reset_external_auth()
+        client.backends.delete_source('google', cls.source_uuid)
+        client.displays.delete(cls.display_uuid)
+        client.profiles.delete(cls.profile_uuid)
+        super().tearDownClass()
+
+    @fixtures.google_result(GOOGLE_CONTACT_LIST)
+    def test_plugin_lookup(self, google_api):
+        result = self.client.directories.lookup(term='mario', profile='default')
+
         assert_that(result, has_entries(
             results=contains(
-                has_entries(column_values=contains('Wario')),
-            )
+                has_entries(
+                    backend='google',
+                    source='google',
+                    column_values=contains(
+                        'Mario Bros',
+                        'mario@bros.example.com',
+                        '+15555551111',
+                        '+15555551234',
+                    ),
+                ),
+            ),
         ))
 
-    def test_given_no_google_when_lookup_then_no_result(self):
-        self.auth_client_mock.reset_external_auth()
+    @fixtures.google_result(GOOGLE_CONTACT_LIST)
+    def test_plugin_favorites(self, google_api):
+        response = self.client.directories.lookup(term='luigi', profile='default')
+        luigi = response['results'][0]
+        source = luigi['source']
+        id_ = luigi['relations']['source_entry_id']
 
-        result = self.client.directories.lookup(term='war', profile='default')
-        result = result['results']
+        self.client.directories.new_favorite(source, id_)
 
-        assert_that(result, is_(empty()))
-
-    def test_given_google_source_when_get_all_contacts_then_contacts_fetched(self):
-        self.auth_client_mock.set_external_auth(self.GOOGLE_EXTERNAL_AUTH)
-
-        result = self.client.backends.list_contacts_from_source(
-            backend=self.BACKEND,
-            source_uuid=self.source['uuid'],
-        )
-
+        result = self.client.directories.favorites(profile='default')
         assert_that(result, has_entries(
-            total=1,
-            filtered=1,
-            items=contains(has_entries(
-                name='Wario Bros',
-                numbers=['5555555555'],
-            )),
+            results=contains(
+                has_entries(column_values=has_item('Luigi Bros')),
+            ),
         ))
 
-    def test_given_non_existing_google_source_when_get_all_contacts_then_not_found(self):
-        self.auth_client_mock.set_external_auth(self.GOOGLE_EXTERNAL_AUTH)
-
-        assert_that(
-            calling(self.client.backends.list_contacts_from_source).with_args(
-                backend=self.BACKEND,
-                source_uuid='a-non-existing-source-uuid',
-            ),
-            raises(requests.HTTPError).matching(
-                has_property('response', has_properties('status_code', 404))
-            )
+    @fixtures.google_result(GOOGLE_CONTACT_LIST)
+    def test_plugin_reverse(self, google_api):
+        response = self.client.directories.reverse(
+            exten='+15555551234',
+            profile='default',
+            xivo_user_uuid='uuid-tenant-master',
         )
 
-    def test_given_google_source_and_non_existing_tenant_when_get_all_contacts_then_not_found(self):
-        self.auth_client_mock.set_external_auth(self.GOOGLE_EXTERNAL_AUTH)
-
-        assert_that(
-            calling(self.client.backends.list_contacts_from_source).with_args(
-                backend=self.BACKEND,
-                source_uuid=self.source['uuid'],
-                tenant_uuid=SUB_TENANT,
-            ),
-            raises(requests.HTTPError).matching(
-                has_property('response', has_properties('status_code', 404))
-            )
-        )
+        assert_that(response, has_entries(display='Mario Bros'))

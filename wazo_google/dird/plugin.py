@@ -68,7 +68,7 @@ class GooglePlugin(BaseSourcePlugin):
         except GoogleTokenNotFoundException:
             return []
 
-        contacts = self.google.get_contacts(google_token)
+        contacts, _ = self.google.get_contacts(google_token)
         filtered_contacts = [c for c in contacts if c[self.unique_column] in unique_ids]
 
         return [self._SourceResult(contact) for contact in filtered_contacts]
@@ -87,7 +87,7 @@ class GooglePlugin(BaseSourcePlugin):
             logger.debug('could not find a matching google token, aborting first_match')
             return None
 
-        contacts = self.google.get_contacts(google_token)
+        contacts, _ = self.google.get_contacts(google_token)
         lowered_term = term.lower()
 
         for contact in contacts:

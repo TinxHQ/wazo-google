@@ -13,6 +13,7 @@ from xivo_test_helpers.auth import AuthClient as AuthMock
 from xivo_test_helpers.hamcrest.raises import raises
 
 from .helpers.constants import (
+    GOOGLE_CONTACT_LIST,
     HTTP_404,
     SUB_TENANT,
     UNKNOWN_UUID,
@@ -21,40 +22,6 @@ from .helpers.constants import (
 )
 from .helpers.base_dird import BaseGoogleAssetTestCase
 from .helpers.fixtures import http as fixtures
-
-GOOGLE_CONTACT_LIST = {
-    "feed": {
-        "openSearch$totalResults": {"$t": "2"},
-        "openSearch$startIndex": {"$t": "1"},
-        "openSearch$itemsPerPage": {"$t": "10000"},
-        "entry": [
-            {
-                "id": {"$t": "http://www.google.com/m8/feeds/contacts/peach%40bros.example.com/base/20aec7728b4f316b"},
-                "title": {"$t": "Mario Bros", "type": "text"},
-                "gd$email":[
-                    {"address": "mario@bros.example.com", "rel": "http://schemas.google.com/g/2005#other"},
-                ],
-                "gd$phoneNumber": [
-                    {"rel": "http://schemas.google.com/g/2005#mobile", "uri": "tel:+1-555-555-1234", "$t": "+1 555-555-1234"},
-                    {"rel": "http://schemas.google.com/g/2005#home", "uri": "tel:+1-555-555-1111", "$t": "+1 5555551111"},
-                ],
-            },
-            {
-                "id": {"$t": "http://www.google.com/m8/feeds/contacts/peach%40bros.example.com/base/72b6b4840bf772e6"},
-                "title": {"$t": "Luigi Bros", "type": "text"},
-                "gd$email": [
-                    {"address": "Luigi@bros.example.com", "rel": "http://schemas.google.com/g/2005#home"},
-                    {"address": "luigi_bros@caramail.com", "label": "Old school"},
-                ],
-                "gd$phoneNumber": [
-                    {"rel": "http://schemas.google.com/g/2005#mobile", "uri": "tel:+1-555-555-4567", "$t": "+1 555-555-4567"},
-                    {"rel": "http://schemas.google.com/g/2005#home", "uri": "tel:+1-555-555-1111", "$t": "+1 5555551111"},
-                    {"label": "Mushroom land land-line", "uri": "tel:+1-555-555-2222", "$t": "(555) 555-2222"},
-                ],
-            }
-        ]
-    }
-}
 
 
 class TestGoogleContactList(BaseGoogleAssetTestCase):
