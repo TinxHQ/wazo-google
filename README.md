@@ -10,7 +10,7 @@ This plugin adds routes to manage google authentication.
 
 ## dird plugin
 
-This plugin adds Google contact to search results from wazo-auth
+This plugin adds Google contact to search results from wazo-dird
 
 
 ### Configuration
