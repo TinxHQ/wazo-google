@@ -6,6 +6,7 @@ import unittest
 from hamcrest import (
     assert_that,
     contains,
+    contains_inanyorder,
     has_entries,
 )
 
@@ -73,7 +74,7 @@ class TestGoogleContactFormatter(unittest.TestCase):
                 home='+15551239876',
                 custom='5551231111',
             ),
-            numbers=contains(
+            numbers=contains_inanyorder(
                 '+15551239876',
                 '5551231111',
                 '+15551234567',
