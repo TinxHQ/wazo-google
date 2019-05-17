@@ -7,7 +7,7 @@ from operator import itemgetter
 
 import requests
 
-from xivo_auth_client import Client as Auth
+from wazo_auth_client import Client as Auth
 
 from .exceptions import GoogleTokenNotFoundException
 

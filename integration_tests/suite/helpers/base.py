@@ -4,8 +4,8 @@
 import os
 import requests
 
+from wazo_auth_client import Client
 from xivo_test_helpers.asset_launching_test_case import AssetLaunchingTestCase
-from xivo_auth_client import Client
 
 
 class BaseTestCase(AssetLaunchingTestCase):
