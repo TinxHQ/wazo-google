@@ -14,7 +14,8 @@ author: Wazo Team
 name: wazo-google
 namespace: official
 plugin_format_version: 1
-version: 1.2.0-1
+version: 1.2.1-1
 tags:
   - authentication
-min_wazo_version: 19.07
+  - contacts
+min_wazo_version: 19.08
