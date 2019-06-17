@@ -5,7 +5,7 @@ Changelog
 =======
 
 * Use the wazo-auth-client
-* Fix openapi spec to add paginagion on /contacts
+* Fix openapi spec to add pagination on /contacts
 
 
 1.0.0-1
