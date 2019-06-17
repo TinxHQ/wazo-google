@@ -10,6 +10,11 @@ paths:
           required: true
           description: Source uuid
           type: string
+        - $ref: '#/parameters/order'
+        - $ref: '#/parameters/direction'
+        - $ref: '#/parameters/limit'
+        - $ref: '#/parameters/offset'
+        - $ref: '#/parameters/search'
       summary: Retrieve all contacts from `google`
       tags:
         - google
