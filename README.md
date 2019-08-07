@@ -2,6 +2,10 @@
 
 This is a plugin for Wazo that adds external authentication routes to wazo-auth for Google and contacts to wazo-dird.
 
+## Deprecated
+
+This plugins has been merged into wazo-auth and wazo-dird avoid using this plugin on a version above wazo 19.10
+
 
 ## auth plugin
 
